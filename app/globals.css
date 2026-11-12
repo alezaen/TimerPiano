@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0b0b10;
+  --color-card: #14141c;
+  --color-line: #23232e;
+  --color-fg: #f4f4f6;
+  --color-dim: #8d8d99;
+  --color-gold: #d4b26e;
+}
+
+html,
+body {
+  background: var(--color-ink);
+  color: var(--color-fg);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100dvh;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes tp-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tp-fade {
+  animation: tp-fade 0.5s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tp-fade {
+    animation: none;
+  }
+}
