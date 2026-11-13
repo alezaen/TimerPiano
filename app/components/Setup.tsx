@@ -1,13 +1,77 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore, BLOCK_OPTIONS, MAX_AREA_MINUTES, STEP_MINUTES } from "@/lib/store";
 import { AREAS, AREA_BY_ID } from "@/lib/areas";
 import { buildBlocks } from "@/lib/interleave";
 import { streak } from "@/lib/stats";
-import { requestAudioPermission } from "@/lib/audio";
+import { requestAudioPermission, playStart, playStep, playTap, playShuffle } from "@/lib/audio";
 import { vibrate } from "@/lib/haptics";
 import Progress from "./Progress";
+
+/** Botón táctil: un toque suma una vez; mantenerlo apretado repite rápido. */
+function HoldButton({
+  onStep,
+  atLimit,
+  label,
+  className,
+  children,
+}: {
+  onStep: () => void;
+  atLimit: boolean;
+  label: string;
+  className: string;
+  children: React.ReactNode;
+}) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rep = useRef<ReturnType<typeof setInterval> | null>(null);
+  const held = useRef(false);
+
+  const clear = () => {
+    if (timer.current) clearTimeout(timer.current);
+    if (rep.current) clearInterval(rep.current);
+    timer.current = null;
+    rep.current = null;
+  };
+  useEffect(() => clear, []);
+
+  return (
+    <button
+      aria-label={label}
+      aria-disabled={atLimit}
+      className={`${className} select-none transition-transform active:scale-90 ${atLimit ? "opacity-30" : ""}`}
+      onPointerDown={() => {
+        held.current = false;
+        clear();
+        timer.current = setTimeout(() => {
+          held.current = true;
+          onStep();
+          rep.current = setInterval(onStep, 140);
+        }, 420);
+      }}
+      onPointerUp={() => {
+        const wasHeld = held.current;
+        clear();
+        held.current = false;
+        if (!wasHeld) onStep();
+      }}
+      onPointerCancel={() => {
+        clear();
+        held.current = false;
+      }}
+      onPointerLeave={() => {
+        clear();
+        held.current = false;
+      }}
+      onClick={(e) => {
+        if (e.detail === 0) onStep();
+      }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default function Setup() {
   const { minutes, blockMin, sound, history, setMinutes, setBlockMin, toggleSound, start } = useStore();
@@ -19,14 +83,20 @@ export default function Setup() {
   const run = streak(history);
 
   const change = (id: (typeof AREAS)[number]["id"], delta: number) => {
+    const st = useStore.getState();
+    const cur = st.minutes[id];
+    const next = Math.max(0, Math.min(MAX_AREA_MINUTES, cur + delta));
+    if (next === cur) return;
+    setMinutes(id, next);
     vibrate(8);
-    setMinutes(id, minutes[id] + delta);
+    if (st.sound) playStep(next / STEP_MINUTES);
   };
 
   const go = () => {
     if (blocks.length === 0) return;
     requestAudioPermission();
-    vibrate(20);
+    if (sound) playStart();
+    vibrate([30, 40, 30]);
     start(blocks);
   };
 
@@ -77,23 +147,23 @@ export default function Setup() {
                 <p className="truncate font-medium">{a.label}</p>
                 <p className="truncate text-xs text-dim">{a.hint}</p>
               </div>
-              <button
-                onClick={() => change(a.id, -STEP_MINUTES)}
-                disabled={m <= 0}
-                aria-label={`Menos minutos de ${a.label}`}
-                className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-xl text-dim active:bg-line disabled:opacity-30"
+              <HoldButton
+                onStep={() => change(a.id, -STEP_MINUTES)}
+                atLimit={m <= 0}
+                label={`Menos minutos de ${a.label}`}
+                className="flex h-12 w-12 items-center justify-center rounded-xl border border-line text-2xl text-dim"
               >
                 −
-              </button>
+              </HoldButton>
               <span className="num w-9 text-center text-lg font-semibold">{m}</span>
-              <button
-                onClick={() => change(a.id, STEP_MINUTES)}
-                disabled={m >= MAX_AREA_MINUTES}
-                aria-label={`Más minutos de ${a.label}`}
-                className="flex h-11 w-11 items-center justify-center rounded-xl border border-line text-xl text-fg active:bg-line disabled:opacity-30"
+              <HoldButton
+                onStep={() => change(a.id, STEP_MINUTES)}
+                atLimit={m >= MAX_AREA_MINUTES}
+                label={`Más minutos de ${a.label}`}
+                className="flex h-12 w-12 items-center justify-center rounded-xl border border-line text-2xl text-fg"
               >
                 +
-              </button>
+              </HoldButton>
             </div>
           );
         })}
@@ -109,6 +179,7 @@ export default function Setup() {
               aria-checked={blockMin === n}
               onClick={() => {
                 vibrate(8);
+                if (sound) playTap();
                 setBlockMin(n);
               }}
               className={`num h-11 rounded-xl text-sm font-semibold transition-colors ${
@@ -126,7 +197,8 @@ export default function Setup() {
           <p className="text-sm font-medium">Tu orden de hoy</p>
           <button
             onClick={() => {
-              vibrate(8);
+              vibrate([10, 30, 10, 30, 10]);
+              if (sound) playShuffle();
               setSeed((s) => s + 1);
             }}
             disabled={blocks.length < 2}
@@ -137,12 +209,16 @@ export default function Setup() {
         </div>
         {blocks.length > 0 ? (
           <>
-            <div className="mt-3 flex h-3 gap-[3px]" aria-hidden>
+            <div key={seed} className="mt-3 flex h-3 gap-[3px]" aria-hidden>
               {blocks.map((b, i) => (
                 <div
                   key={i}
-                  className="rounded-full"
-                  style={{ flexGrow: b.seconds, background: AREA_BY_ID[b.area].color }}
+                  className="tp-pop rounded-full"
+                  style={{
+                    flexGrow: b.seconds,
+                    background: AREA_BY_ID[b.area].color,
+                    animationDelay: `${Math.min(i, 30) * 22}ms`,
+                  }}
                 />
               ))}
             </div>
