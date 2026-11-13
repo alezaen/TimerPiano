@@ -6,7 +6,7 @@ import type { AreaId, Block, Minutes, Seconds, Session } from "./types";
 import { AREA_IDS, emptySeconds, sumSeconds } from "./areas";
 import { dayKey } from "./stats";
 
-export const MAX_AREA_MINUTES = 60;
+export const MAX_AREA_MINUTES = 120;
 export const STEP_MINUTES = 5;
 export const BLOCK_OPTIONS = [3, 5, 10] as const;
 const HISTORY_DAYS = 400;

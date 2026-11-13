@@ -23,7 +23,7 @@ export function streak(history: Record<string, Seconds>): number {
 
 /** Últimos `n` días, el más antiguo primero; el último es hoy. */
 export function lastDays(n: number): { key: string; label: string; isToday: boolean }[] {
-  const names = ["D", "L", "M", "M", "J", "V", "S"];
+  const names = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sá"];
   return Array.from({ length: n }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (n - 1 - i));

@@ -73,6 +73,39 @@ function HoldButton({
   );
 }
 
+/** Número que se puede tocar y escribir directo (ej. 25). */
+function MinutesField({ value, label, onCommit }: { value: number; label: string; onCommit: (n: number) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft === null) return;
+    const n = parseInt(draft, 10);
+    if (!Number.isNaN(n)) onCommit(n);
+    setDraft(null);
+  };
+  return (
+    <div className="relative min-w-0 flex-1">
+      <input
+        inputMode="numeric"
+        pattern="[0-9]*"
+        aria-label={`Minutos de ${label}`}
+        value={draft ?? String(value)}
+        onFocus={(e) => {
+          const el = e.currentTarget;
+          setDraft(String(value));
+          requestAnimationFrame(() => el.select());
+        }}
+        onChange={(e) => setDraft(e.target.value.replace(/\D/g, "").slice(0, 3))}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+        }}
+        className="num h-12 w-full rounded-xl border border-edge bg-ink/60 pr-9 text-center text-xl font-semibold outline-none focus:border-gold"
+      />
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-dim">min</span>
+    </div>
+  );
+}
+
 export default function Setup() {
   const { minutes, blockMin, sound, history, setMinutes, setBlockMin, toggleSound, start } = useStore();
   const [seed, setSeed] = useState(0);
@@ -101,7 +134,7 @@ export default function Setup() {
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-40 pt-[max(env(safe-area-inset-top),20px)]">
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-44 pt-[max(env(safe-area-inset-top),20px)]">
       <header className="flex items-center justify-between">
         <h1 className="text-xs font-semibold uppercase tracking-[0.22em] text-gold">TimerPiano</h1>
         <div className="flex items-center gap-2">
@@ -135,35 +168,45 @@ export default function Setup() {
       <section className="mt-6 space-y-2.5" aria-label="Minutos por área">
         {AREAS.map((a) => {
           const m = minutes[a.id];
-          const on = m > 0;
           return (
             <div
               key={a.id}
-              className="flex items-center gap-3 rounded-2xl border border-line bg-card py-3 pl-4 pr-3"
-              style={{ opacity: on ? 1 : 0.55 }}
+              className="rounded-2xl border border-line bg-card p-4"
+              style={{ opacity: m > 0 ? 1 : 0.6 }}
             >
-              <span className="h-9 w-1.5 shrink-0 rounded-full" style={{ background: a.color }} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{a.label}</p>
-                <p className="truncate text-xs text-dim">{a.hint}</p>
+              <div className="flex items-center gap-3">
+                <span className="h-9 w-1.5 shrink-0 rounded-full" style={{ background: a.color }} />
+                <div className="min-w-0">
+                  <p className="font-medium leading-tight">{a.label}</p>
+                  <p className="mt-0.5 text-xs text-dim">{a.hint}</p>
+                </div>
               </div>
-              <HoldButton
-                onStep={() => change(a.id, -STEP_MINUTES)}
-                atLimit={m <= 0}
-                label={`Menos minutos de ${a.label}`}
-                className="flex h-12 w-12 items-center justify-center rounded-xl border border-line text-2xl text-dim"
-              >
-                −
-              </HoldButton>
-              <span className="num w-9 text-center text-lg font-semibold">{m}</span>
-              <HoldButton
-                onStep={() => change(a.id, STEP_MINUTES)}
-                atLimit={m >= MAX_AREA_MINUTES}
-                label={`Más minutos de ${a.label}`}
-                className="flex h-12 w-12 items-center justify-center rounded-xl border border-line text-2xl text-fg"
-              >
-                +
-              </HoldButton>
+              <div className="mt-3 flex items-center gap-2">
+                <HoldButton
+                  onStep={() => change(a.id, -STEP_MINUTES)}
+                  atLimit={m <= 0}
+                  label={`Menos minutos de ${a.label}`}
+                  className="flex h-12 w-14 shrink-0 items-center justify-center rounded-xl border border-edge bg-line/60 text-2xl font-medium text-fg"
+                >
+                  −
+                </HoldButton>
+                <MinutesField
+                  value={m}
+                  label={a.label}
+                  onCommit={(n) => {
+                    setMinutes(a.id, n);
+                    vibrate(8);
+                  }}
+                />
+                <HoldButton
+                  onStep={() => change(a.id, STEP_MINUTES)}
+                  atLimit={m >= MAX_AREA_MINUTES}
+                  label={`Más minutos de ${a.label}`}
+                  className="flex h-12 w-14 shrink-0 items-center justify-center rounded-xl border border-edge bg-line/60 text-2xl font-medium text-fg"
+                >
+                  +
+                </HoldButton>
+              </div>
             </div>
           );
         })}
@@ -237,8 +280,8 @@ export default function Setup() {
 
       <Progress />
 
-      <div className="fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t from-ink via-ink/95 to-transparent">
-        <div className="mx-auto max-w-md px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-8">
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-ink/95 backdrop-blur">
+        <div className="mx-auto max-w-md px-5 pb-[max(env(safe-area-inset-bottom),12px)] pt-3">
           <button
             onClick={go}
             disabled={blocks.length === 0}

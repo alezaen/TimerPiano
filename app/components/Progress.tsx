@@ -19,6 +19,31 @@ export default function Progress() {
   const maxArea = Math.max(1, ...byArea.map((a) => a.sec));
   const run = streak(history);
 
+  if (weekSec === 0) {
+    const hasHistory = Object.keys(history).length > 0;
+    return (
+      <section className="mt-10" aria-labelledby="progreso">
+        <h2 id="progreso" className="text-xs font-semibold uppercase tracking-[0.18em] text-dim">
+          Tu semana
+        </h2>
+        <div className="mt-3 rounded-2xl border border-dashed border-edge bg-card p-5 text-center">
+          <div className="flex justify-center gap-3" aria-hidden>
+            {days.map((d) => (
+              <div key={d.key} className="flex flex-col items-center gap-1.5">
+                <span className={`h-2.5 w-2.5 rounded-full ${d.isToday ? "bg-gold" : "bg-line"}`} />
+                <span className={`text-[11px] ${d.isToday ? "font-semibold text-gold" : "text-dim"}`}>{d.label}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-sm font-medium">
+            {hasHistory ? "Esta semana aún no practicas" : "Completa tu primera sesión para empezar tu racha"}
+          </p>
+          <p className="mt-1 text-xs text-dim">Aquí verás tus minutos por día y por área.</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="mt-10" aria-labelledby="progreso">
       <h2 id="progreso" className="text-xs font-semibold uppercase tracking-[0.18em] text-dim">
