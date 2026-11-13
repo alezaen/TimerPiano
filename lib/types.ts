@@ -16,3 +16,6 @@ export type Session = {
   /** Segundos realmente practicados por área en esta sesión. */
   done: Seconds;
 };
+
+/** Una sesión terminada. `p` = pendiente de subir a la nube. */
+export type SessionRecord = { id: string; f: string; d: Seconds; p?: 1 };

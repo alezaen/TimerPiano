@@ -4,10 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore, BLOCK_OPTIONS, MAX_AREA_MINUTES, STEP_MINUTES } from "@/lib/store";
 import { AREAS, AREA_BY_ID } from "@/lib/areas";
 import { buildBlocks } from "@/lib/interleave";
-import { streak } from "@/lib/stats";
 import { requestAudioPermission, playStart, playStep, playTap, playShuffle } from "@/lib/audio";
 import { vibrate } from "@/lib/haptics";
+import { REPERTORIO_URL } from "@/lib/links";
+import { historyOf, streak } from "@/lib/stats";
+import { pendientes } from "@/lib/sync";
 import Progress from "./Progress";
+import SyncSheet from "./SyncSheet";
 
 /** Botón táctil: un toque suma una vez; mantenerlo apretado repite rápido. */
 function HoldButton({
@@ -107,8 +110,12 @@ function MinutesField({ value, label, onCommit }: { value: number; label: string
 }
 
 export default function Setup() {
-  const { minutes, blockMin, sound, history, setMinutes, setBlockMin, toggleSound, start } = useStore();
+  const { minutes, blockMin, sound, sessions, auth, syncState, setMinutes, setBlockMin, toggleSound, start } = useStore();
   const [seed, setSeed] = useState(0);
+  const [sheet, setSheet] = useState(false);
+  const history = useMemo(() => historyOf(sessions), [sessions]);
+  const pend = pendientes(sessions).length;
+  const dot = !auth ? null : syncState === "error" ? "#ff6b5b" : syncState === "syncing" || pend > 0 ? "#d4b26e" : "#4ade80";
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const blocks = useMemo(() => buildBlocks(minutes, blockMin), [minutes, blockMin, seed]);
@@ -137,19 +144,35 @@ export default function Setup() {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-44 pt-[max(env(safe-area-inset-top),20px)]">
       <header className="flex items-center justify-between">
         <h1 className="text-xs font-semibold uppercase tracking-[0.22em] text-gold">TimerPiano</h1>
-        <div className="flex items-center gap-2">
-          {run > 0 && (
-            <span className="num rounded-full border border-line bg-card px-3 py-1 text-xs text-dim">
-              Racha <span className="font-semibold text-fg">{run}</span>
-            </span>
-          )}
+        <div className="flex items-center gap-1">
+          <a
+            href={REPERTORIO_URL}
+            aria-label="Abrir Acordes y Tonos"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-dim transition-transform active:scale-90 active:bg-line"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M9 18V5l12-2v13" />
+              <circle cx="6" cy="18" r="3" />
+              <circle cx="18" cy="16" r="3" />
+            </svg>
+          </a>
+          <button
+            onClick={() => setSheet(true)}
+            aria-label={auth ? "Sincronización" : "Conectar para sincronizar"}
+            className="relative flex h-10 w-10 items-center justify-center rounded-full text-dim transition-transform active:scale-90 active:bg-line"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 1 0 5 15.3 3.5 3.5 0 0 0 6.5 19z" />
+            </svg>
+            {dot && <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full ring-2 ring-ink" style={{ background: dot }} />}
+          </button>
           <button
             onClick={toggleSound}
             aria-pressed={sound}
             aria-label={sound ? "Sonido activado" : "Sonido desactivado"}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-card text-dim"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-dim transition-transform active:scale-90 active:bg-line"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M11 5 6 9H3v6h3l5 4V5z" />
               {sound ? <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /> : <path d="m16 9 5 6m0-6-5 6" />}
             </svg>
@@ -157,12 +180,19 @@ export default function Setup() {
         </div>
       </header>
 
-      <section className="mt-8">
-        <p className="text-sm text-dim">Hoy practicas</p>
-        <p className="num text-7xl font-semibold leading-none tracking-tight">
-          {total}
-          <span className="ml-2 text-2xl font-medium text-dim">min</span>
-        </p>
+      <section className="mt-8 flex items-end justify-between">
+        <div>
+          <p className="text-sm text-dim">Hoy practicas</p>
+          <p className="num text-7xl font-semibold leading-none tracking-tight">
+            {total}
+            <span className="ml-2 text-2xl font-medium text-dim">min</span>
+          </p>
+        </div>
+        {run > 0 && (
+          <span className="num mb-1 rounded-full border border-line bg-card px-3 py-1 text-xs text-dim">
+            Racha <span className="font-semibold text-fg">{run}</span>
+          </span>
+        )}
       </section>
 
       <section className="mt-6 space-y-2.5" aria-label="Minutos por área">
@@ -279,6 +309,21 @@ export default function Setup() {
       </section>
 
       <Progress />
+
+      <a
+        href={REPERTORIO_URL}
+        className="mt-6 flex items-center justify-between rounded-2xl border border-line bg-card p-4 transition-transform active:scale-[0.98]"
+      >
+        <div>
+          <p className="font-medium">Acordes y Tonos</p>
+          <p className="mt-0.5 text-xs text-dim">Tu repertorio, acordes y teoría</p>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-dim" aria-hidden>
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+      </a>
+
+      {sheet && <SyncSheet onClose={() => setSheet(false)} />}
 
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-ink/95 backdrop-blur">
         <div className="mx-auto max-w-md px-5 pb-[max(env(safe-area-inset-bottom),12px)] pt-3">

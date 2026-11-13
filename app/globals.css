@@ -58,6 +58,21 @@ button {
   transform-origin: bottom;
 }
 
+@keyframes tp-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.tp-up {
+  animation: tp-up 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
 @keyframes tp-grow {
   from {
     transform: scaleX(0);
@@ -90,6 +105,7 @@ button {
   .tp-fade,
   .tp-pop,
   .tp-grow,
+  .tp-up,
   .tp-pulse {
     animation: none;
   }

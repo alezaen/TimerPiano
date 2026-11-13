@@ -1,13 +1,15 @@
 "use client";
 
+import { useMemo } from "react";
 import { useStore } from "@/lib/store";
 import { AREAS, sumSeconds } from "@/lib/areas";
-import { lastDays, streak } from "@/lib/stats";
+import { historyOf, lastDays, streak } from "@/lib/stats";
 
 const mins = (s: number) => Math.round(s / 60);
 
 export default function Progress() {
-  const history = useStore((s) => s.history);
+  const sessions = useStore((s) => s.sessions);
+  const history = useMemo(() => historyOf(sessions), [sessions]);
   const days = lastDays(7);
   const totals = days.map((d) => sumSeconds(history[d.key]));
   const maxSec = Math.max(30 * 60, ...totals);

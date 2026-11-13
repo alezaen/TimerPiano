@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore, remainingSeconds } from "@/lib/store";
 import { AREAS, AREA_BY_ID, sumSeconds } from "@/lib/areas";
-import { streak } from "@/lib/stats";
+import { historyOf, streak } from "@/lib/stats";
 import { playBlockStart, playCountdown, playPause, playResume, playSessionEnd } from "@/lib/audio";
 import { vibrate } from "@/lib/haptics";
 
@@ -222,7 +222,7 @@ function Running() {
 }
 
 function Done() {
-  const { session, history, close, sound } = useStore();
+  const { session, sessions, close, sound } = useStore();
   const played = useRef(false);
 
   useEffect(() => {
@@ -235,7 +235,7 @@ function Done() {
   const s = session!;
   const total = sumSeconds(s.done);
   const max = Math.max(1, ...AREAS.map((a) => s.done[a.id]));
-  const run = streak(history);
+  const run = streak(historyOf(sessions));
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-[max(env(safe-area-inset-top),20px)]">

@@ -2,21 +2,35 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AreaId, Block, Minutes, Seconds, Session } from "./types";
-import { AREA_IDS, emptySeconds, sumSeconds } from "./areas";
+import type { AreaId, Block, Minutes, Seconds, Session, SessionRecord } from "./types";
+import { emptySeconds, sumSeconds } from "./areas";
 import { dayKey } from "./stats";
+import { MAX_SESSIONS, mezclar, pendientes, uid } from "./sync";
 
 export const MAX_AREA_MINUTES = 120;
 export const STEP_MINUTES = 5;
 export const BLOCK_OPTIONS = [3, 5, 10] as const;
-const HISTORY_DAYS = 400;
+
+export type Auth = { token: string; expira: number };
+export type SyncState = "idle" | "syncing" | "ok" | "error";
 
 interface State {
   minutes: Minutes;
   blockMin: number;
   sound: boolean;
-  history: Record<string, Seconds>;
+  sessions: SessionRecord[];
   session: Session | null;
+
+  /** Cuándo se cambiaron por última vez los ajustes aquí, y cuál fue la última fecha ya sincronizada. */
+  ajustesTs: number;
+  ajustesOk: number;
+  auth: Auth | null;
+  syncState: SyncState;
+  syncError: string | null;
+  lastSync: number | null;
+  login: (clave: string) => Promise<string | null>;
+  logout: () => void;
+  sync: () => Promise<void>;
 
   setMinutes: (id: AreaId, minutes: number) => void;
   setBlockMin: (n: number) => void;
@@ -39,16 +53,10 @@ export function remainingSeconds(s: Session, now = Date.now()): number {
   return 0;
 }
 
-function commit(history: Record<string, Seconds>, done: Seconds): Record<string, Seconds> {
-  if (sumSeconds(done) <= 0) return history;
-  const key = dayKey();
-  const prev = history[key] ?? emptySeconds();
-  const merged = { ...prev };
-  for (const id of AREA_IDS) merged[id] = prev[id] + done[id];
-  const next = { ...history, [key]: merged };
-  const keys = Object.keys(next).sort();
-  for (const k of keys.slice(0, Math.max(0, keys.length - HISTORY_DAYS))) delete next[k];
-  return next;
+function addSession(sessions: SessionRecord[], done: Seconds): SessionRecord[] {
+  if (sumSeconds(done) <= 0) return sessions;
+  const rec: SessionRecord = { id: uid(), f: dayKey(), d: { ...done }, p: 1 };
+  return [...sessions, rec].slice(-MAX_SESSIONS);
 }
 
 export const useStore = create<State>()(
@@ -57,12 +65,21 @@ export const useStore = create<State>()(
       minutes: { solfeo: 10, hanon: 10, oido: 10, thompson: 10 },
       blockMin: 5,
       sound: true,
-      history: {},
+      sessions: [],
       session: null,
+      ajustesTs: 0,
+      ajustesOk: 0,
+      auth: null,
+      syncState: "idle",
+      syncError: null,
+      lastSync: null,
 
       setMinutes: (id, m) =>
-        set((s) => ({ minutes: { ...s.minutes, [id]: Math.max(0, Math.min(MAX_AREA_MINUTES, m)) } })),
-      setBlockMin: (n) => set({ blockMin: n }),
+        set((s) => ({
+          minutes: { ...s.minutes, [id]: Math.max(0, Math.min(MAX_AREA_MINUTES, m)) },
+          ajustesTs: Date.now(),
+        })),
+      setBlockMin: (n) => set({ blockMin: n, ajustesTs: Date.now() }),
       toggleSound: () => set((s) => ({ sound: !s.sound })),
 
       start: (blocks) => {
@@ -105,7 +122,7 @@ export const useStore = create<State>()(
           if (index === s.blocks.length - 1) {
             set({
               session: { ...s, index, status: "done", endAt: null, remaining: 0, done },
-              history: commit(get().history, done),
+              sessions: addSession(get().sessions, done),
             });
             return;
           }
@@ -126,7 +143,7 @@ export const useStore = create<State>()(
         if (s.index === s.blocks.length - 1) {
           set({
             session: { ...s, status: "done", endAt: null, remaining: 0, done },
-            history: commit(get().history, done),
+            sessions: addSession(get().sessions, done),
           });
           return;
         }
@@ -150,8 +167,82 @@ export const useStore = create<State>()(
         done[block.area] += Math.max(0, block.seconds - remainingSeconds(s));
         set({
           session: { ...s, status: "done", endAt: null, remaining: 0, done },
-          history: commit(get().history, done),
+          sessions: addSession(get().sessions, done),
         });
+      },
+
+      login: async (clave) => {
+        try {
+          const res = await fetch("/api/entrar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ clave }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) return (data as { error?: string }).error ?? "No se pudo entrar";
+          set({ auth: { token: data.token, expira: data.expira }, syncState: "idle", syncError: null });
+          await get().sync();
+          return null;
+        } catch {
+          return "Sin conexión. Intenta de nuevo.";
+        }
+      },
+
+      logout: () => set({ auth: null, syncState: "idle", syncError: null }),
+
+      sync: async () => {
+        const st = get();
+        if (st.syncState === "syncing") return;
+        const { auth } = st;
+        if (!auth) return;
+        if (auth.expira < Date.now()) {
+          set({ auth: null, syncState: "idle", syncError: "Tu sesión venció. Vuelve a conectar." });
+          return;
+        }
+        set({ syncState: "syncing", syncError: null });
+        try {
+          const subir = pendientes(st.sessions).slice(0, 100).map(({ id, f, d }) => ({ id, f, d }));
+          const res = await fetch("/api/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              token: auth.token,
+              sesiones: subir,
+              ajustes: { minutes: st.minutes, blockMin: st.blockMin, ts: st.ajustesTs },
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.status === 401) {
+            set({ auth: null, syncState: "idle", syncError: "Tu sesión venció. Vuelve a conectar." });
+            return;
+          }
+          if (!res.ok) {
+            set({ syncState: "error", syncError: (data as { error?: string }).error ?? "No se pudo sincronizar" });
+            return;
+          }
+          const { sesiones, ajustes } = data as {
+            sesiones: SessionRecord[];
+            ajustes: { minutes: Minutes; blockMin: number; ts: number } | null;
+          };
+          const ahora = get();
+          const patch: Partial<State> = {
+            sessions: mezclar(ahora.sessions, sesiones),
+            syncState: "ok",
+            lastSync: Date.now(),
+          };
+          if (ajustes && ajustes.ts > ahora.ajustesTs) {
+            patch.minutes = ajustes.minutes;
+            patch.blockMin = ajustes.blockMin;
+            patch.ajustesTs = ajustes.ts;
+            patch.ajustesOk = ajustes.ts;
+          } else {
+            patch.ajustesOk = Math.max(ahora.ajustesOk, st.ajustesTs);
+          }
+          set(patch);
+          if (pendientes(get().sessions).length > 0 && subir.length === 100) void get().sync();
+        } catch {
+          set({ syncState: "error", syncError: "Sin conexión. Se sincroniza cuando vuelva." });
+        }
       },
 
       close: () => set({ session: null }),
@@ -174,12 +265,27 @@ export const useStore = create<State>()(
     }),
     {
       name: "timerpiano-v2",
+      version: 3,
+      // v2 guardaba un historial por día; ahora son sesiones sueltas (para poder sincronizarlas).
+      migrate: (persisted, version) => {
+        const p = (persisted ?? {}) as Record<string, unknown>;
+        if (version < 3) {
+          const h = (p.history ?? {}) as Record<string, Seconds>;
+          p.sessions = Object.entries(h).map(([f, d]) => ({ id: "mig" + f.replace(/-/g, ""), f, d, p: 1 }));
+          delete p.history;
+        }
+        return p as unknown as State;
+      },
       partialize: (s) => ({
         minutes: s.minutes,
         blockMin: s.blockMin,
         sound: s.sound,
-        history: s.history,
+        sessions: s.sessions,
         session: s.session,
+        ajustesTs: s.ajustesTs,
+        ajustesOk: s.ajustesOk,
+        auth: s.auth,
+        lastSync: s.lastSync,
       }),
     },
   ),
