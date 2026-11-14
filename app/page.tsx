@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { useWakeLock } from "@/lib/wakeLock";
+import { leerPlan } from "@/lib/plan";
+import type { AreaId } from "@/lib/types";
 import Setup from "./components/Setup";
 import Session from "./components/Session";
 
@@ -16,6 +18,12 @@ export default function Home() {
       localStorage.removeItem("timerpiano-v1");
     } catch {}
     useStore.getState().recover();
+    // Plan sugerido por Acordes y Tonos (#plan=solfeo-5,oido-5): pone esos minutos y deja que tú des a empezar.
+    if (location.hash.startsWith("#plan=")) {
+      const plan = leerPlan(location.hash);
+      if (plan) for (const [id, min] of Object.entries(plan)) useStore.getState().setMinutes(id as AreaId, min);
+      history.replaceState(null, "", location.pathname + location.search);
+    }
     setMounted(true);
   }, []);
 
