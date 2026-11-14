@@ -15,6 +15,8 @@ export type Session = {
   remaining: number;
   /** Segundos realmente practicados por área en esta sesión. */
   done: Seconds;
+  /** Id de la sesión guardada en el historial cuando terminó (para llevarla a Acordes y Tonos). */
+  recordId?: string | null;
 };
 
 /** Una sesión terminada. `p` = pendiente de subir a la nube. */

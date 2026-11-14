@@ -165,9 +165,12 @@ export const useStore = create<State>()(
         const block = s.blocks[s.index];
         const done = { ...s.done };
         done[block.area] += Math.max(0, block.seconds - remainingSeconds(s));
+        const sessions = addSession(get().sessions, done);
+        // addSession agrega al final (y no agrega nada si no se practicó nada).
+        const recordId = sumSeconds(done) > 0 ? sessions[sessions.length - 1].id : null;
         set({
-          session: { ...s, status: "done", endAt: null, remaining: 0, done },
-          sessions: addSession(get().sessions, done),
+          session: { ...s, status: "done", endAt: null, remaining: 0, done, recordId },
+          sessions,
         });
       },
 
