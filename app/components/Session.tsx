@@ -6,6 +6,7 @@ import { AREAS, AREA_BY_ID, sumSeconds } from "@/lib/areas";
 import { historyOf, streak } from "@/lib/stats";
 import { playBlockStart, playCountdown, playPause, playResume, playSessionEnd } from "@/lib/audio";
 import { vibrate } from "@/lib/haptics";
+import { repertorioConSesion } from "@/lib/links";
 
 const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 const mins = (s: number) => Math.round(s / 60);
@@ -236,6 +237,7 @@ function Done() {
   const total = sumSeconds(s.done);
   const max = Math.max(1, ...AREAS.map((a) => s.done[a.id]));
   const run = streak(historyOf(sessions));
+  const rec = s.recordId ? sessions.find((x) => x.id === s.recordId) : undefined;
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-[max(env(safe-area-inset-top),20px)]">
@@ -271,6 +273,14 @@ function Done() {
         </div>
       </div>
 
+      {rec && (
+        <a
+          href={repertorioConSesion(rec)}
+          className="mb-3 flex h-12 w-full items-center justify-center rounded-2xl border border-line bg-card text-sm font-semibold transition-transform active:scale-[0.98]"
+        >
+          Sumar a Acordes y Tonos
+        </a>
+      )}
       <button
         onClick={close}
         className="h-14 w-full rounded-2xl bg-gold text-base font-semibold text-ink transition-transform active:scale-[0.98]"
