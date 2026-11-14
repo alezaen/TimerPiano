@@ -49,10 +49,14 @@ export default function Home() {
     });
     const onVisible = () => document.visibilityState === "visible" && void st.getState().sync();
     document.addEventListener("visibilitychange", onVisible);
+    // Si practicaste sin internet, al volver la conexión se sube lo pendiente solo.
+    const onOnline = () => void st.getState().sync();
+    window.addEventListener("online", onOnline);
     return () => {
       unsub();
       if (t) clearTimeout(t);
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", onOnline);
     };
   }, [mounted]);
 
