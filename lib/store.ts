@@ -59,6 +59,12 @@ function addSession(sessions: SessionRecord[], done: Seconds): SessionRecord[] {
   return [...sessions, rec].slice(-MAX_SESSIONS);
 }
 
+/** Guarda la sesión en el historial (si se practicó algo) y devuelve su id, para poder llevarla a Acordes y Tonos. */
+function guardarSesion(sessions: SessionRecord[], done: Seconds): { sessions: SessionRecord[]; recordId: string | null } {
+  const nuevas = addSession(sessions, done);
+  return { sessions: nuevas, recordId: sumSeconds(done) > 0 ? nuevas[nuevas.length - 1].id : null };
+}
+
 export const useStore = create<State>()(
   persist(
     (set, get) => ({
@@ -120,9 +126,10 @@ export const useStore = create<State>()(
           const b = s.blocks[index];
           done[b.area] += b.seconds;
           if (index === s.blocks.length - 1) {
+            const g = guardarSesion(get().sessions, done);
             set({
-              session: { ...s, index, status: "done", endAt: null, remaining: 0, done },
-              sessions: addSession(get().sessions, done),
+              session: { ...s, index, status: "done", endAt: null, remaining: 0, done, recordId: g.recordId },
+              sessions: g.sessions,
             });
             return;
           }
@@ -141,9 +148,10 @@ export const useStore = create<State>()(
         done[block.area] += elapsed;
 
         if (s.index === s.blocks.length - 1) {
+          const g = guardarSesion(get().sessions, done);
           set({
-            session: { ...s, status: "done", endAt: null, remaining: 0, done },
-            sessions: addSession(get().sessions, done),
+            session: { ...s, status: "done", endAt: null, remaining: 0, done, recordId: g.recordId },
+            sessions: g.sessions,
           });
           return;
         }
@@ -165,12 +173,10 @@ export const useStore = create<State>()(
         const block = s.blocks[s.index];
         const done = { ...s.done };
         done[block.area] += Math.max(0, block.seconds - remainingSeconds(s));
-        const sessions = addSession(get().sessions, done);
-        // addSession agrega al final (y no agrega nada si no se practicó nada).
-        const recordId = sumSeconds(done) > 0 ? sessions[sessions.length - 1].id : null;
+        const g = guardarSesion(get().sessions, done);
         set({
-          session: { ...s, status: "done", endAt: null, remaining: 0, done, recordId },
-          sessions,
+          session: { ...s, status: "done", endAt: null, remaining: 0, done, recordId: g.recordId },
+          sessions: g.sessions,
         });
       },
 
