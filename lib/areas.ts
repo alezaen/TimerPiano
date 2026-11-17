@@ -1,10 +1,10 @@
 import type { AreaId, Seconds } from "./types";
 
 export const AREAS: { id: AreaId; label: string; hint: string; color: string }[] = [
-  { id: "solfeo", label: "Solfeo", hint: "Lectura y ritmo", color: "#7c9eff" },
-  { id: "hanon", label: "Hanon", hint: "Técnica de dedos", color: "#ff8a5b" },
-  { id: "oido", label: "Canción a oído", hint: "Sacar de oído", color: "#a78bfa" },
-  { id: "thompson", label: "John Thompson", hint: "Repertorio", color: "#4ade80" },
+  { id: "solfeo", label: "Solfeo", hint: "Lectura y ritmo", color: "#2ef2e0" },
+  { id: "hanon", label: "Hanon", hint: "Técnica de dedos", color: "#ff8a3d" },
+  { id: "oido", label: "Canción a oído", hint: "Sacar de oído", color: "#ff3d81" },
+  { id: "thompson", label: "John Thompson", hint: "Repertorio", color: "#a98bff" },
 ];
 
 export const AREA_IDS: AreaId[] = AREAS.map((a) => a.id);

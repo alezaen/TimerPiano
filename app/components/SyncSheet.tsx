@@ -37,13 +37,13 @@ export default function SyncSheet({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60" onClick={onClose}>
+    <div className="fixed inset-0 z-30 flex items-end justify-center bg-ink/60 backdrop-blur-sm" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Sincronizar"
         onClick={(e) => e.stopPropagation()}
-        className="tp-up w-full max-w-md rounded-t-3xl border-t border-line bg-card px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-5"
+        className="tp-up w-full max-w-md rounded-t-3xl border-t border-edge bg-ink/70 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] backdrop-blur-2xl backdrop-saturate-150 px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-5"
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Sincronizar</h2>

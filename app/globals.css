@@ -1,23 +1,44 @@
 @import "tailwindcss";
 
+/*
+ * EarPiano · cristal de noche (el mismo estilo que EarPiano).
+ * Los nombres de colores se quedan (ink, card, line, edge, fg, dim, gold) para no tocar cada pantalla: "gold" ahora es el turquesa neón de acento
+ * y card, line y edge son vidrio (blanco con transparencia) sobre el fondo de noche.
+ */
 @theme {
-  --color-ink: #0b0b10;
-  --color-card: #14141c;
-  --color-line: #23232e;
-  --color-edge: #4b4b5c;
-  --color-fg: #f4f4f6;
-  --color-dim: #8d8d99;
-  --color-gold: #d4b26e;
+  --color-ink: #07051a;
+  --color-card: rgb(255 255 255 / 0.07);
+  --color-line: rgb(255 255 255 / 0.12);
+  --color-edge: rgb(255 255 255 / 0.22);
+  --color-fg: #f5f2ff;
+  --color-dim: #a9a1cc;
+  --color-gold: #2ef2e0;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, "Segoe UI", Roboto, system-ui, sans-serif;
+}
+
+html {
+  background: #07051a;
 }
 
 html,
 body {
-  background: var(--color-ink);
   color: var(--color-fg);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
   min-height: 100dvh;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+}
+
+/* Fondo de noche con dos luces suaves (rosa y turquesa); fijo para que no se mueva al desplazar. */
+body {
+  background:
+    radial-gradient(75% 45% at 92% -4%, rgb(255 61 129 / 0.3), transparent 70%),
+    radial-gradient(70% 42% at -6% 104%, rgb(46 242 224 / 0.17), transparent 70%),
+    radial-gradient(55% 30% at 50% 52%, rgb(123 47 247 / 0.14), transparent 75%),
+    linear-gradient(180deg, #07051a, #0d0928 58%, #170a35);
+  background-attachment: fixed;
 }
 
 button {
@@ -109,4 +130,9 @@ button {
   .tp-pulse {
     animation: none;
   }
+}
+
+/* Brillo de borde de vidrio en las tarjetas (arriba, una línea de luz). */
+.border-line.bg-card {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), 0 10px 30px rgb(0 0 0 / 0.3);
 }
