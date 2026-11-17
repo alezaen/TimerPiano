@@ -1,11 +1,12 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { AreaId, Block, Minutes, Seconds, Session, SessionRecord } from "./types";
 import { emptySeconds, sumSeconds } from "./areas";
 import { dayKey } from "./stats";
 import { MAX_SESSIONS, mezclar, pendientes, uid } from "./sync";
+import { sanear } from "./sanear";
 
 export const MAX_AREA_MINUTES = 120;
 export const STEP_MINUTES = 5;
@@ -64,6 +65,30 @@ function guardarSesion(sessions: SessionRecord[], done: Seconds): { sessions: Se
   const nuevas = addSession(sessions, done);
   return { sessions: nuevas, recordId: sumSeconds(done) > 0 ? nuevas[nuevas.length - 1].id : null };
 }
+
+/**
+ * localStorage que nunca lanza errores: si está bloqueado (navegación privada, permisos) o lleno, la app sigue funcionando
+ * en esta visita y simplemente no guarda (antes, cada acción lanzaba un error).
+ */
+const almacenSeguro = {
+  getItem: (k: string) => {
+    try {
+      return window.localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (k: string, v: string) => {
+    try {
+      window.localStorage.setItem(k, v);
+    } catch {}
+  },
+  removeItem: (k: string) => {
+    try {
+      window.localStorage.removeItem(k);
+    } catch {}
+  },
+};
 
 export const useStore = create<State>()(
   persist(
@@ -274,6 +299,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "timerpiano-v2",
+      storage: createJSONStorage(() => almacenSeguro),
       version: 3,
       // v2 guardaba un historial por día; ahora son sesiones sueltas (para poder sincronizarlas).
       migrate: (persisted, version) => {
@@ -285,6 +311,8 @@ export const useStore = create<State>()(
         }
         return p as unknown as State;
       },
+      // Lo guardado en el teléfono se revisa campo por campo: lo dañado o raro se descarta y se usa el valor normal (así la app siempre abre).
+      merge: (persisted, current) => ({ ...current, ...sanear(persisted) }),
       partialize: (s) => ({
         minutes: s.minutes,
         blockMin: s.blockMin,

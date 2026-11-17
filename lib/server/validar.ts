@@ -8,6 +8,13 @@ const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 const entero = (v: unknown, min: number, max: number): v is number =>
   typeof v === "number" && Number.isInteger(v) && v >= min && v <= max;
 
+/** Una fecha que existe de verdad: "2026-02-30" tiene buen formato pero no existe (Date la corrige en silencio a marzo). */
+function fechaReal(f: string): boolean {
+  if (!FECHA.test(f)) return false;
+  const t = Date.parse(f + "T00:00:00Z");
+  return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === f;
+}
+
 export type Ajustes = { minutes: Minutes; blockMin: number; ts: number };
 
 /** Devuelve la sesión limpia o null si no es válida (nada se "arregla" en silencio). */
@@ -15,7 +22,7 @@ export function limpiarSesion(s: unknown): SessionRecord | null {
   if (!s || typeof s !== "object") return null;
   const o = s as Record<string, unknown>;
   if (typeof o.id !== "string" || !ID.test(o.id)) return null;
-  if (typeof o.f !== "string" || !FECHA.test(o.f) || Number.isNaN(Date.parse(o.f + "T00:00:00Z"))) return null;
+  if (typeof o.f !== "string" || !fechaReal(o.f)) return null;
   if (!o.d || typeof o.d !== "object") return null;
   const d = o.d as Record<string, unknown>;
   const out = {} as SessionRecord["d"];

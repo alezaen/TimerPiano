@@ -1,0 +1,33 @@
+{
+  "_nota": "Este mismo archivo está en las dos apps (Repertory/test y TimerPiano/test). Cada una prueba su mitad contra él: si cambias el formato del enlace en una, esta prueba falla en la otra hasta que actualices el archivo en las dos.",
+  "version": 1,
+  "hoy": "2026-11-16",
+  "sitios": { "repertorio": "https://zaenlly.vercel.app/", "timerpiano": "https://zaenlly1.vercel.app/" },
+  "areas": ["solfeo", "hanon", "oido", "thompson"],
+  "timer_a_repertorio": [
+    { "caso": "sesión normal (8 min)", "id": "abc123def456", "f": "2026-11-16", "d": { "solfeo": 300, "hanon": 120, "oido": 0, "thompson": 60 }, "enlace": "https://zaenlly.vercel.app/#timer=abc123def456.2026-11-16.300-120-0-60", "valido": true },
+    { "caso": "una sola área, pocos segundos", "id": "zz9yy8xx7ww6", "f": "2026-11-15", "d": { "solfeo": 0, "hanon": 0, "oido": 37, "thompson": 0 }, "enlace": "https://zaenlly.vercel.app/#timer=zz9yy8xx7ww6.2026-11-15.0-0-37-0", "valido": true },
+    { "caso": "máximo que puede salir de TimerPiano (120 min por área)", "id": "maxmaxmaxmax", "f": "2026-11-16", "d": { "solfeo": 7200, "hanon": 7200, "oido": 7200, "thompson": 7200 }, "enlace": "https://zaenlly.vercel.app/#timer=maxmaxmaxmax.2026-11-16.7200-7200-7200-7200", "valido": true },
+    { "caso": "id de sesiones viejas migradas (mig + fecha)", "id": "mig20261113", "f": "2026-11-13", "d": { "solfeo": 600, "hanon": 0, "oido": 0, "thompson": 0 }, "enlace": "https://zaenlly.vercel.app/#timer=mig20261113.2026-11-13.600-0-0-0", "valido": true },
+    { "caso": "fecha de mañana (otra zona horaria): se tolera", "id": "abc123def456", "f": "2026-11-17", "d": { "solfeo": 60, "hanon": 0, "oido": 0, "thompson": 0 }, "enlace": "https://zaenlly.vercel.app/#timer=abc123def456.2026-11-17.60-0-0-0", "valido": true },
+    { "caso": "fecha dentro de 3 días: no", "enlace": "https://zaenlly.vercel.app/#timer=abc123def456.2026-11-19.60-0-0-0", "valido": false },
+    { "caso": "todo en cero: no", "enlace": "https://zaenlly.vercel.app/#timer=abc123def456.2026-11-16.0-0-0-0", "valido": false },
+    { "caso": "fecha que no existe", "enlace": "https://zaenlly.vercel.app/#timer=abc123def456.2026-02-31.60-0-0-0", "valido": false },
+    { "caso": "faltan áreas", "enlace": "https://zaenlly.vercel.app/#timer=abc123def456.2026-11-16.60-0-0", "valido": false },
+    { "caso": "id muy corto", "enlace": "https://zaenlly.vercel.app/#timer=abc.2026-11-16.60-0-0-0", "valido": false },
+    { "caso": "id con mayúsculas o símbolos", "enlace": "https://zaenlly.vercel.app/#timer=ABC123DEF456.2026-11-16.60-0-0-0", "valido": false },
+    { "caso": "negativo", "enlace": "https://zaenlly.vercel.app/#timer=abc123def456.2026-11-16.-60-0-0-0", "valido": false },
+    { "caso": "cifra absurda", "enlace": "https://zaenlly.vercel.app/#timer=abc123def456.2026-11-16.99999-0-0-0", "valido": false }
+  ],
+  "repertorio_a_timer": [
+    { "caso": "plan que sugiere Acordes y Tonos", "plan": { "solfeo": 5, "oido": 5 }, "enlace": "https://zaenlly1.vercel.app/#plan=solfeo-5,oido-5", "resultado": { "solfeo": 5, "oido": 5 } }
+  ],
+  "plan_hash": [
+    { "caso": "dos áreas", "hash": "#plan=solfeo-5,oido-5", "resultado": { "solfeo": 5, "oido": 5 } },
+    { "caso": "las cuatro y el máximo", "hash": "#plan=solfeo-120,hanon-0,oido-10,thompson-15", "resultado": { "solfeo": 120, "hanon": 0, "oido": 10, "thompson": 15 } },
+    { "caso": "minutos que no son de 5 en 5: se ignora esa área", "hash": "#plan=solfeo-7,oido-5", "resultado": { "oido": 5 } },
+    { "caso": "área que no existe", "hash": "#plan=piano-5", "resultado": null },
+    { "caso": "más de 120", "hash": "#plan=solfeo-125", "resultado": null },
+    { "caso": "vacío", "hash": "#plan=", "resultado": null }
+  ]
+}

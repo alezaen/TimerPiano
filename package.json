@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test"
+    "test": "node --test \"test/*.test.mjs\"",
+    "test:recorridos": "node --test test/recorridos.mjs",
+    "test:capturas": "node test/capturas.mjs",
+    "test:azar": "node test/azar.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.1",

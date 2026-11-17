@@ -114,7 +114,9 @@ export function requestAudioPermission() {
 
 /** Nota de la pentatónica según el valor del contador (sube al sumar, baja al restar). */
 export function playStep(step: number) {
-  note(midi(PENTA[Math.max(0, Math.min(PENTA.length - 1, step % PENTA.length))]), 0, 0.5, 0.11);
+  // `step` puede traer decimales (7 min ÷ 5 = 1.4): sin redondear, PENTA[1.4] no existe y el sonido lanzaba un error.
+  const i = Number.isFinite(step) ? Math.round(step) : 0;
+  note(midi(PENTA[Math.max(0, Math.min(PENTA.length - 1, i % PENTA.length))]), 0, 0.5, 0.11);
 }
 
 export function playTap() {
