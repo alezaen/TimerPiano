@@ -1,4 +1,4 @@
-// Acceso de un solo usuario (tú). Misma idea que Acordes y Tonos:
+// Acceso de un solo usuario (tú). Misma idea que EarPiano:
 // la contraseña (ADMIN_PASSWORD, en Vercel) solo se comprueba en /api/entrar. Si es correcta, el servidor
 // entrega un "pase" firmado que vence a los 30 días; el teléfono/PC guarda el pase, nunca la contraseña.
 // La firma usa SESSION_SECRET (texto aleatorio largo, también en Vercel). Cambiar cualquiera de las dos

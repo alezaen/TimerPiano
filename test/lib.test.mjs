@@ -1,4 +1,4 @@
-// Pruebas de la lógica de TimerPiano (lib/*.ts): plan, enlace a Acordes y Tonos, mezcla de sesiones, estadísticas, validación del servidor y bloques.
+// Pruebas de la lógica de TimerPiano (lib/*.ts): plan, enlace a EarPiano, mezcla de sesiones, estadísticas, validación del servidor y bloques.
 // Ejecutar: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,7 +17,7 @@ test('leerPlan: solo áreas conocidas y minutos de 5 en 5 hasta 120', () => {
     assert.equal(plan.leerPlan(mal), null, JSON.stringify(mal));
 });
 
-test('enlace a Acordes y Tonos: formato #timer=ID.FECHA.s-h-o-t con los segundos por área, en el orden de las áreas', () => {
+test('enlace a EarPiano: formato #timer=ID.FECHA.s-h-o-t con los segundos por área, en el orden de las áreas', () => {
   const rec = { id: 'abc123def456', f: '2026-11-16', d: { solfeo: 300, hanon: 120, oido: 0, thompson: 60 } };
   assert.equal(links.repertorioConSesion(rec), 'https://zaenlly.vercel.app/#timer=abc123def456.2026-11-16.300-120-0-60');
   assert.deepEqual(areas.AREA_IDS, ['solfeo', 'hanon', 'oido', 'thompson']);

@@ -1,5 +1,5 @@
 // Ayudas para las pruebas con navegador REAL sin pantalla (Chromium con Playwright): arranca la app compilada, simula la nube y, si la carpeta de
-// Acordes y Tonos está al lado (../Repertory o REPERTORY_DIR), también la sirve, para recorrer las dos apps juntas en el mismo navegador.
+// EarPiano está al lado (../Repertory o REPERTORY_DIR), también la sirve, para recorrer las dos apps juntas en el mismo navegador.
 // Se instala una vez:  npm i --no-save playwright && npx playwright install chromium     (la app se compila sola si falta: npm run build)
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -16,7 +16,7 @@ export const ANCHO = 360, ALTO = 740;
 
 const TIPOS = { '.js': 'application/javascript', '.css': 'text/css', '.html': 'text/html', '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml' };
 const parte = (nombre, prog) => ({ nombre, tono: '', prog, letra: 'La la la\nLa la la', pista: '' });
-const CANCIONES = { version: 2, nombre: 'Acordes y Tonos', intro: '', canciones: [
+const CANCIONES = { version: 2, nombre: 'EarPiano', intro: '', canciones: [
   { id: 'id0aleluya', titulo: 'Aleluya', artista: 'Artista A', tono: 'C', partes: [parte('Verso', 'C Am | F G'), parte('Coro', 'F G | Em Am')] },
   { id: 'id1grande', titulo: 'Cuán grande es Él', artista: 'Artista B', tono: 'G', partes: [parte('Coro', 'C G | D Em')] }] };
 
@@ -51,8 +51,8 @@ export async function arrancar() {
         r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sesiones: [...nubeLocal.sesiones.values()], ajustes: null }) });
       });
       await ctx.route(`${TIMER}/**`, async r => { const u = new URL(r.request().url()); try { await r.fulfill({ response: await r.fetch({ url: url + u.pathname + u.search }) }); } catch { await r.abort('failed'); } });   // el sitio de TimerPiano = esta app local
-      await ctx.route(`${REPERTORIO}/**`, async r => {                                                                         // el sitio de Acordes y Tonos = su carpeta local
-        if (!hayOtra) return r.fulfill({ status: 404, body: 'Acordes y Tonos no está al lado' });
+      await ctx.route(`${REPERTORIO}/**`, async r => {                                                                         // el sitio de EarPiano = su carpeta local
+        if (!hayOtra) return r.fulfill({ status: 404, body: 'EarPiano no está al lado' });
         let ruta = new URL(r.request().url()).pathname; if (ruta === '/') ruta = '/index.html';
         if (ruta === '/api/canciones') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(CANCIONES) });
         if (ruta.startsWith('/api/')) return r.fulfill({ status: 503, body: '{}' });

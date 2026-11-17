@@ -28,9 +28,8 @@ export const metadata: Metadata = {
     title: "TimerPiano",
     description,
     locale: "es_DO",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TimerPiano" }],
   },
-  twitter: { card: "summary_large_image", title: "TimerPiano", description, images: ["/og.png"] },
+  twitter: { card: "summary", title: "TimerPiano", description },
 };
 
 export const viewport: Viewport = {

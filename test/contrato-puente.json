@@ -20,7 +20,7 @@
     { "caso": "cifra absurda", "enlace": "https://zaenlly.vercel.app/#timer=abc123def456.2026-11-16.99999-0-0-0", "valido": false }
   ],
   "repertorio_a_timer": [
-    { "caso": "plan que sugiere Acordes y Tonos", "plan": { "solfeo": 5, "oido": 5 }, "enlace": "https://zaenlly1.vercel.app/#plan=solfeo-5,oido-5", "resultado": { "solfeo": 5, "oido": 5 } }
+    { "caso": "plan que sugiere EarPiano", "plan": { "solfeo": 5, "oido": 5 }, "enlace": "https://zaenlly1.vercel.app/#plan=solfeo-5,oido-5", "resultado": { "solfeo": 5, "oido": 5 } }
   ],
   "plan_hash": [
     { "caso": "dos áreas", "hash": "#plan=solfeo-5,oido-5", "resultado": { "solfeo": 5, "oido": 5 } },

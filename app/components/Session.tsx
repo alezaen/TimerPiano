@@ -278,7 +278,7 @@ function Done() {
           href={repertorioConSesion(rec)}
           className="mb-3 flex h-12 w-full items-center justify-center rounded-2xl border border-line bg-card text-sm font-semibold transition-transform active:scale-[0.98]"
         >
-          Sumar a Acordes y Tonos
+          Sumar a EarPiano
         </a>
       )}
       <button

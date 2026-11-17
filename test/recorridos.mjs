@@ -1,5 +1,5 @@
 // Recorridos de personas de verdad en un navegador real (Chromium sin pantalla, 360 px de ancho) y escenarios raros de TimerPiano.
-// Con la carpeta de Acordes y Tonos al lado, el recorrido completo pasa de una app a la otra.
+// Con la carpeta de EarPiano al lado, el recorrido completo pasa de una app a la otra.
 // Ejecutar:  npm i --no-save playwright && npx playwright install chromium   (una vez)    luego:  npm run test:recorridos
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -12,13 +12,13 @@ const limpio = p => assert.deepEqual(p.errores, [], 'errores en la página:\n' +
 const HORA = new Date('2026-11-17T00:00:00Z');       // 16 nov 2026, 20:00 en Santo Domingo (la zona de las pruebas)
 const nubeNueva = () => ({ sesiones: new Map(), llamadas: 0, lento: 0, caida: false });
 
-test('RECORRIDO COMPLETO: abrir TimerPiano, hacer una sesión, ver el aviso, sumarla a Acordes y Tonos y volver a ver el plan', { skip: hayOtra ? false : 'falta la carpeta de Acordes y Tonos al lado (REPERTORY_DIR)' }, async () => {
+test('RECORRIDO COMPLETO: abrir TimerPiano, hacer una sesión, ver el aviso, sumarla a EarPiano y volver a ver el plan', { skip: hayOtra ? false : 'falta la carpeta de EarPiano al lado (REPERTORY_DIR)' }, async () => {
   const { pagina } = await app.telefono({ hora: HORA }), p = await pagina();
   await p.goto(app.url); await p.getByRole('button', { name: /Empezar/ }).waitFor();
   await hacerSesion(p, { solfeo: 5, oido: 5 });
-  const enlace = await p.getByRole('link', { name: 'Sumar a Acordes y Tonos' }).getAttribute('href');
+  const enlace = await p.getByRole('link', { name: 'Sumar a EarPiano' }).getAttribute('href');
   assert.match(enlace, /^https:\/\/zaenlly\.vercel\.app\/#timer=[a-z0-9]{12}\.2026-11-16\.300-0-300-0$/);
-  await p.getByRole('link', { name: 'Sumar a Acordes y Tonos' }).click();
+  await p.getByRole('link', { name: 'Sumar a EarPiano' }).click();
   await p.waitForFunction(o => location.origin === o, REPERTORIO, { timeout: 15000 }); await p.locator('#lista .fila').first().waitFor();
   await p.locator('#aviso-timer').waitFor({ timeout: 8000 });
   assert.equal((await p.locator('#aviso-timer').textContent()).trim(), 'TimerPiano: se sumaron 10 min a tu práctica.');
@@ -26,7 +26,7 @@ test('RECORRIDO COMPLETO: abrir TimerPiano, hacer una sesión, ver el aviso, sum
   await p.goto(enlace); await p.locator('#lista .fila').first().waitFor(); await p.waitForTimeout(500);
   await p.click('#practica-btn'); await p.waitForSelector('#pr-timer-ir', { state: 'attached' });
   assert.match(await p.locator('#pr-timer').textContent(), /Hoy: 10 min/, 'el total de hoy no se duplicó');
-  await p.evaluate(() => document.getElementById('pr-timer-ir').click());                // Acordes y Tonos → TimerPiano con su plan
+  await p.evaluate(() => document.getElementById('pr-timer-ir').click());                // EarPiano → TimerPiano con su plan
   await p.waitForFunction(o => location.origin === o, TIMER, { timeout: 15000 }); await p.getByRole('button', { name: /Empezar/ }).waitFor();
   assert.match(await p.getByRole('button', { name: /Empezar · \d+ min/ }).textContent(), /Empezar · \d+ min/);
   limpio(p);
@@ -97,7 +97,7 @@ test('OTRA ZONA HORARIA: la sesión se guarda con el día de TU reloj, no el de 
     const { pagina } = await app.telefono({ zona, hora }), p = await pagina();
     await p.goto(app.url); await hacerSesion(p, { solfeo: 5 });
     const f = JSON.parse(await p.evaluate(() => localStorage.getItem('timerpiano-v2'))).state.sessions[0].f;
-    assert.equal(f, dia, zona); assert.match(await p.getByRole('link', { name: 'Sumar a Acordes y Tonos' }).getAttribute('href'), new RegExp(`\\.${dia}\\.`));
+    assert.equal(f, dia, zona); assert.match(await p.getByRole('link', { name: 'Sumar a EarPiano' }).getAttribute('href'), new RegExp(`\\.${dia}\\.`));
     limpio(p);
   }
 });

@@ -147,7 +147,7 @@ export default function Setup() {
         <div className="flex items-center gap-1">
           <a
             href={REPERTORIO_URL}
-            aria-label="Abrir Acordes y Tonos"
+            aria-label="Abrir EarPiano"
             className="flex h-10 w-10 items-center justify-center rounded-full text-dim transition-transform active:scale-90 active:bg-line"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -315,7 +315,7 @@ export default function Setup() {
         className="mt-6 flex items-center justify-between rounded-2xl border border-line bg-card p-4 transition-transform active:scale-[0.98]"
       >
         <div>
-          <p className="font-medium">Acordes y Tonos</p>
+          <p className="font-medium">EarPiano</p>
           <p className="mt-0.5 text-xs text-dim">Tu repertorio, acordes y teoría</p>
         </div>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-dim" aria-hidden>
