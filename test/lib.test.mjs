@@ -94,3 +94,16 @@ test('bloques: suman justo lo pedido, ninguno pasa del tamaño y no se repite el
   assert.deepEqual(inter.buildBlocks({ solfeo: 0, hanon: 0, oido: 0, thompson: 0 }, 5), []);
   assert.equal(inter.buildBlocks({ solfeo: 10, hanon: 0, oido: 0, thompson: 0 }, 5).length, 2);
 });
+
+test('resumen de sesión: plannedBy suma lo planeado por área y secondsInLastDays suma solo los últimos días', async () => {
+  const planeado = stats.plannedBy([{ area: 'solfeo', seconds: 300 }, { area: 'hanon', seconds: 120 }, { area: 'solfeo', seconds: 60 }]);
+  assert.deepEqual(planeado, { solfeo: 360, hanon: 120, oido: 0, thompson: 0 });
+  assert.deepEqual(stats.plannedBy([]), { solfeo: 0, hanon: 0, oido: 0, thompson: 0 });
+  await conReloj(dia(2026, 11, 16), () => {
+    const s = (n) => ({ solfeo: n, hanon: 0, oido: 0, thompson: 0 });
+    const hist = { '2026-11-16': s(600), '2026-11-12': s(300), '2026-11-10': s(900), '2026-11-09': s(60) };
+    assert.equal(stats.secondsInLastDays(hist, 7), 600 + 300 + 900, 'del 10 al 16 entran; el 9 no');
+    assert.equal(stats.secondsInLastDays(hist, 1), 600, 'solo hoy');
+    assert.equal(stats.secondsInLastDays({}, 7), 0);
+  });
+});

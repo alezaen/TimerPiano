@@ -1,4 +1,4 @@
-import type { SessionRecord, Seconds } from "./types";
+import type { Block, SessionRecord, Seconds } from "./types";
 import { AREA_IDS, emptySeconds, sumSeconds } from "./areas";
 
 export const dayKey = (d: Date = new Date()): string => {
@@ -39,4 +39,16 @@ export function historyOf(sessions: SessionRecord[]): Record<string, Seconds> {
     for (const id of AREA_IDS) day[id] += s.d[id];
   }
   return out;
+}
+
+/** Segundos planeados por área según los bloques de la sesión. */
+export function plannedBy(blocks: Block[]): Seconds {
+  const out = emptySeconds();
+  for (const b of blocks) out[b.area] += b.seconds;
+  return out;
+}
+
+/** Segundos practicados en los últimos `n` días (hoy incluido). */
+export function secondsInLastDays(history: Record<string, Seconds>, n: number): number {
+  return lastDays(n).reduce((t, d) => t + sumSeconds(history[d.key]), 0);
 }

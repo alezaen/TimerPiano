@@ -3,13 +3,26 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore, remainingSeconds } from "@/lib/store";
 import { AREAS, AREA_BY_ID, sumSeconds } from "@/lib/areas";
-import { historyOf, streak } from "@/lib/stats";
+import { dayKey, historyOf, plannedBy, secondsInLastDays, streak } from "@/lib/stats";
 import { playBlockStart, playCountdown, playPause, playResume, playSessionEnd } from "@/lib/audio";
 import { vibrate } from "@/lib/haptics";
 import { repertorioConSesion } from "@/lib/links";
 
 const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 const mins = (s: number) => Math.round(s / 60);
+/** 45 min · 1 h 05 */
+const dur = (s: number) => {
+  const m = Math.round(s / 60);
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}`;
+};
+
+/** Título y frase del resumen según lo que se logró frente a lo planeado. */
+function mensaje(pct: number, total: number, run: number) {
+  if (total === 0) return { title: "Sesión terminada", text: "No alcanzaste a practicar esta vez. Mañana lo retomas." };
+  if (pct >= 100) return { title: "¡Sesión completa!", text: run >= 3 ? `Cumpliste todo y ya llevas ${run} días seguidos.` : "Cumpliste todo lo que planeaste." };
+  if (pct >= 70) return { title: "¡Gran sesión!", text: "Casi todo hecho. Eso es constancia." };
+  return { title: "Sesión guardada", text: "Cada minuto suma. Lo importante es volver mañana." };
+}
 
 export default function Session() {
   const session = useStore((s) => s.session);
@@ -235,58 +248,137 @@ function Done() {
 
   const s = session!;
   const total = sumSeconds(s.done);
-  const max = Math.max(1, ...AREAS.map((a) => s.done[a.id]));
-  const run = streak(historyOf(sessions));
+  const plan = plannedBy(s.blocks);
+  const planned = sumSeconds(plan);
+  const pct = planned > 0 ? Math.min(100, Math.round((total / planned) * 100)) : 0;
+  const history = historyOf(sessions);
+  const run = streak(history);
+  const today = sumSeconds(history[dayKey()]);
+  const week = secondsInLastDays(history, 7);
   const rec = s.recordId ? sessions.find((x) => x.id === s.recordId) : undefined;
+  const { title, text } = mensaje(pct, total, run);
+  const rows = AREAS.filter((a) => plan[a.id] > 0 || s.done[a.id] > 0);
+
+  // Anillo: un arco por área (su color), del tamaño de lo practicado frente a lo planeado.
+  const R = 46;
+  const C = 2 * Math.PI * R;
+  const GAP = 2;
+  const base = Math.max(planned, total, 1);
+  let acc = 0;
+  const arcs = AREAS.filter((a) => s.done[a.id] > 0).map((a) => {
+    const len = Math.max(0, (s.done[a.id] / base) * C - GAP);
+    const arc = { id: a.id, color: a.color, len, off: -acc };
+    acc += (s.done[a.id] / base) * C;
+    return arc;
+  });
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-[max(env(safe-area-inset-top),20px)]">
-      <div className="flex flex-1 flex-col justify-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold">
-          {total > 0 ? "Sesión guardada" : "Sesión terminada"}
-        </p>
-        <p className="num mt-3 text-7xl font-semibold leading-none tracking-tight">
-          {mins(total)}
-          <span className="ml-2 text-2xl font-medium text-dim">min</span>
-        </p>
-        {run > 0 && (
-          <p className="mt-3 text-sm text-dim">
-            Racha: <span className="font-semibold text-fg">{run}</span> {run === 1 ? "día" : "días"}
-          </p>
-        )}
+    <main className="relative mx-auto flex min-h-dvh max-w-md flex-col overflow-hidden px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-[max(env(safe-area-inset-top),20px)]">
+      <div
+        aria-hidden
+        className="tp-fade pointer-events-none absolute inset-x-0 top-0 h-[60%]"
+        style={{ background: "radial-gradient(80% 60% at 50% 0%, color-mix(in srgb, var(--color-gold) 22%, transparent), transparent 75%)" }}
+      />
 
-        <div className="mt-8 space-y-4 rounded-2xl border border-line bg-card p-4">
-          {AREAS.filter((a) => s.done[a.id] > 0).map((a) => (
-            <div key={a.id}>
-              <div className="flex justify-between text-sm">
-                <span style={{ color: a.color }} className="font-medium">
-                  {a.label}
-                </span>
-                <span className="num text-dim">{mins(s.done[a.id])} min</span>
+      <div className="relative flex flex-1 flex-col justify-center py-6">
+        <p className="tp-fade text-center text-xs font-semibold uppercase tracking-[0.22em] text-gold">{total > 0 ? "Sesión guardada" : "Sesión terminada"}</p>
+        <h1 className="tp-fade mt-2 text-center text-3xl font-semibold tracking-tight">{title}</h1>
+        <p className="tp-fade mx-auto mt-2 max-w-[18rem] text-center text-sm text-dim">{text}</p>
+
+        <div className="relative mx-auto mt-6 aspect-square w-[min(68vw,260px)]" role="img" aria-label={`${mins(total)} minutos practicados de ${mins(planned)} planeados`}>
+          <svg viewBox="0 0 100 100" className="absolute inset-0 -rotate-90" aria-hidden>
+            <circle cx="50" cy="50" r={R} fill="none" stroke="var(--color-line)" strokeWidth="5" />
+            {arcs.map((a) => (
+              <circle
+                key={a.id}
+                cx="50"
+                cy="50"
+                r={R}
+                fill="none"
+                stroke={a.color}
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeDasharray={`${a.len} ${C}`}
+                strokeDashoffset={a.off}
+                style={{ filter: `drop-shadow(0 0 3px ${a.color})` }}
+              />
+            ))}
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <p className="num text-[clamp(3.6rem,19vw,5rem)] font-semibold leading-none tracking-tight">{mins(total)}</p>
+            <p className="mt-1 text-sm font-medium text-dim">min practicados</p>
+            {planned > 0 && <p className="num mt-1 text-xs text-dim">{pct}% de lo planeado</p>}
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-2xl border border-line bg-card px-2 py-3">
+            <p className="num text-2xl font-semibold leading-none">
+              {run > 0 && <span aria-hidden>🔥</span>}
+              {run}
+            </p>
+            <p className="mt-1.5 text-xs text-dim">{run === 1 ? "día de racha" : "días de racha"}</p>
+          </div>
+          <div className="rounded-2xl border border-line bg-card px-2 py-3">
+            <p className="num text-2xl font-semibold leading-none">{dur(today)}</p>
+            <p className="mt-1.5 text-xs text-dim">hoy</p>
+          </div>
+          <div className="rounded-2xl border border-line bg-card px-2 py-3">
+            <p className="num text-2xl font-semibold leading-none">{dur(week)}</p>
+            <p className="mt-1.5 text-xs text-dim">últimos 7 días</p>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-4 rounded-2xl border border-line bg-card p-4">
+          {rows.map((a) => {
+            const done = s.done[a.id];
+            const goal = plan[a.id];
+            const ok = goal > 0 && done >= goal * 0.9;
+            return (
+              <div key={a.id}>
+                <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <span style={{ color: a.color }} className="font-medium">
+                    {a.label}
+                  </span>
+                  <span className="num text-dim">
+                    {ok && (
+                      <span aria-label="completado" className="mr-1.5 font-semibold" style={{ color: a.color }}>
+                        ✓
+                      </span>
+                    )}
+                    {mins(done)}
+                    {goal > 0 ? ` / ${mins(goal)}` : ""} min
+                  </span>
+                </div>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-line">
+                  <div
+                    className="tp-grow h-full rounded-full"
+                    style={{ width: `${Math.min(100, (done / Math.max(goal, done, 1)) * 100)}%`, background: a.color }}
+                  />
+                </div>
               </div>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line">
-                <div className="tp-grow h-full rounded-full" style={{ width: `${(s.done[a.id] / max) * 100}%`, background: a.color }} />
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {total === 0 && <p className="text-sm text-dim">No alcanzaste a practicar nada esta vez.</p>}
         </div>
       </div>
 
-      {rec && (
-        <a
-          href={repertorioConSesion(rec)}
-          className="mb-3 flex h-12 w-full items-center justify-center rounded-2xl border border-line bg-card text-sm font-semibold transition-transform active:scale-[0.98]"
+      <div className="relative">
+        {rec && (
+          <a
+            href={repertorioConSesion(rec)}
+            className="mb-3 flex h-12 w-full items-center justify-center rounded-2xl border border-line bg-card text-sm font-semibold transition-transform active:scale-[0.98]"
+          >
+            Sumar a EarPiano
+          </a>
+        )}
+        <button
+          onClick={close}
+          className="h-14 w-full rounded-2xl bg-gold text-base font-semibold text-ink transition-transform active:scale-[0.98]"
         >
-          Sumar a EarPiano
-        </a>
-      )}
-      <button
-        onClick={close}
-        className="h-14 w-full rounded-2xl bg-gold text-base font-semibold text-ink transition-transform active:scale-[0.98]"
-      >
-        Volver al inicio
-      </button>
+          Volver al inicio
+        </button>
+      </div>
     </main>
   );
 }
