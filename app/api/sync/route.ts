@@ -1,9 +1,11 @@
 // POST /api/sync { token, sesiones?, ajustes? } -> { sesiones, ajustes }
 // Guarda en timerpiano/sync.json las sesiones nuevas (solo agrega; una sesión con el mismo id no se repite)
 // y los ajustes más recientes (gana el de fecha mayor). Siempre devuelve lo que hay guardado.
+// Además mantiene al día timerpiano/totales.json, el resumen que lee EarPiano.
 import { leer, escribir, crear, ConflictoError, ExisteError } from "@/lib/server/almacen";
 import { tokenValido, problemaConClave } from "@/lib/server/auth";
 import { limpiarSesion, limpiarAjustes, MAX_SESIONES, type Ajustes } from "@/lib/server/validar";
+import { actualizarTotales } from "@/lib/server/totales";
 import type { SessionRecord } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -81,6 +83,8 @@ export async function POST(request: Request) {
   try {
     const doc = await aplicar(nuevas, ajustes);
     if (!doc) return responder({ error: "Hubo cambios al mismo tiempo. Intenta de nuevo." }, 409);
+    // El resumen que lee EarPiano (timerpiano/totales.json) se deja al día cada vez que se sincroniza.
+    await actualizarTotales(doc.sesiones);
     return responder({ sesiones: doc.sesiones, ajustes: doc.ajustes });
   } catch (e) {
     console.error("POST /api/sync:", e);

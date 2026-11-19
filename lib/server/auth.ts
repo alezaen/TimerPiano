@@ -1,4 +1,6 @@
-// Acceso de un solo usuario (tú). Misma idea que EarPiano:
+// Acceso de un solo usuario (tú). Es el MISMO pase que usa EarPiano (formato "ep1" y misma firma): con el mismo
+// SESSION_SECRET en los dos proyectos de Vercel, un pase hecho por una app lo acepta la otra.
+// Misma idea que EarPiano:
 // la contraseña (ADMIN_PASSWORD, en Vercel) solo se comprueba en /api/entrar. Si es correcta, el servidor
 // entrega un "pase" firmado que vence a los 30 días; el teléfono/PC guarda el pase, nunca la contraseña.
 // La firma usa SESSION_SECRET (texto aleatorio largo, también en Vercel). Cambiar cualquiera de las dos
@@ -11,19 +13,19 @@ const DIAS = 30;
 
 const hash = (s: unknown) => createHash("sha256").update(String(s ?? "")).digest();
 
-const llave = () => hash("timerpiano-sesion-v1|" + process.env.SESSION_SECRET);
-const firmar = (exp: number | string) => createHmac("sha256", llave()).update("v1." + exp).digest("hex");
+const llave = () => hash("earpiano-sesion-v1|" + process.env.SESSION_SECRET);
+const firmar = (exp: number | string) => createHmac("sha256", llave()).update("ep1." + exp).digest("hex");
 
 /** Compara en tiempo constante (sin revelar cuántas letras acertó). */
 export const claveValida = (intento: string) => timingSafeEqual(hash(intento), hash(process.env.ADMIN_PASSWORD));
 
 export function crearToken() {
   const exp = Date.now() + DIAS * 864e5;
-  return { token: `v1.${exp}.${firmar(exp)}`, expira: exp };
+  return { token: `ep1.${exp}.${firmar(exp)}`, expira: exp };
 }
 
 export function tokenValido(t: unknown): boolean {
-  const m = /^v1\.(\d{10,15})\.([0-9a-f]{64})$/.exec(String(t ?? ""));
+  const m = /^ep1\.(\d{10,15})\.([0-9a-f]{64})$/.exec(String(t ?? ""));
   if (!m || Number(m[1]) < Date.now()) return false;
   return timingSafeEqual(Buffer.from(m[2], "hex"), Buffer.from(firmar(m[1]), "hex"));
 }
