@@ -325,7 +325,7 @@ export default function Setup() {
 
       {sheet && <SyncSheet onClose={() => setSheet(false)} />}
 
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-ink/55 backdrop-blur-2xl backdrop-saturate-150">
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-ink/92">
         <div className="mx-auto max-w-md px-5 pb-[max(env(safe-area-inset-bottom),12px)] pt-3">
           <button
             onClick={go}

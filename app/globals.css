@@ -31,14 +31,19 @@ body {
   letter-spacing: -0.005em;
 }
 
-/* Fondo de noche con dos luces suaves (rosa y turquesa); fijo para que no se mueva al desplazar. */
-body {
+/* Fondo de noche con dos luces suaves (rosa y turquesa), en una capa fija propia que el teléfono dibuja una sola vez (sin desenfoques ni fondo fijo: hacían la app lenta). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transform: translateZ(0);
   background:
     radial-gradient(75% 45% at 92% -4%, rgb(255 61 129 / 0.3), transparent 70%),
     radial-gradient(70% 42% at -6% 104%, rgb(46 242 224 / 0.17), transparent 70%),
     radial-gradient(55% 30% at 50% 52%, rgb(123 47 247 / 0.14), transparent 75%),
     linear-gradient(180deg, #07051a, #0d0928 58%, #170a35);
-  background-attachment: fixed;
 }
 
 button {
@@ -134,5 +139,5 @@ button {
 
 /* Brillo de borde de vidrio en las tarjetas (arriba, una línea de luz). */
 .border-line.bg-card {
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), 0 10px 30px rgb(0 0 0 / 0.3);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14);
 }
