@@ -1,8 +1,18 @@
-// Acceso al almacén (Vercel Blob). Mismo diseño que Acordes y Tonos.
+// Acceso al almacén (Vercel Blob). Mismo diseño que EarPiano.
 //  - leer(ruta)                -> { data, etag } o null si no existe
 //  - escribir(ruta, data, { etag }) -> solo si nadie lo cambió desde que lo leíste (si no: ConflictoError)
 //  - crear(ruta, data)         -> solo si NO existe (si ya existe: ExisteError)
 import { get, put, head, BlobPreconditionFailedError } from "@vercel/blob";
+
+/**
+ * Si existe EARPIANO_BLOB_TOKEN (el token de lectura y escritura del almacén de EarPiano), TimerPiano guarda en ESE almacén:
+ * así las dos apps comparten datos aunque estén en cuentas distintas de Vercel (una conexión normal solo sirve dentro de la misma cuenta).
+ * Si no existe, usa su propio almacén como siempre.
+ */
+export function opcionesBlob(env: Record<string, string | undefined> = process.env): { token?: string } {
+  const t = (env.EARPIANO_BLOB_TOKEN || "").trim();
+  return t ? { token: t } : {};
+}
 
 export class ConflictoError extends Error {}
 export class ExisteError extends Error {}
@@ -31,11 +41,11 @@ const sinFormato = (e: unknown) =>
 export async function leer<T = unknown>(ruta: string): Promise<{ data: T; etag: string } | null> {
   let etagApi: string | null = null;
   try {
-    etagApi = (await head(ruta)).etag || null;
+    etagApi = (await head(ruta, opcionesBlob())).etag || null;
   } catch {
     etagApi = null;
   }
-  const r = await conAcceso((access) => get(ruta, { access, useCache: false }));
+  const r = await conAcceso((access) => get(ruta, { access, useCache: false, ...opcionesBlob() }));
   if (!r || r.statusCode !== 200 || !r.stream) return null;
   const etagGet = r.blob.etag;
   const etag = etagApi && sinFormato(etagApi) === sinFormato(etagGet) ? etagApi : etagGet;
@@ -49,6 +59,7 @@ async function poner(ruta: string, data: unknown, extra: Record<string, unknown>
         access,
         contentType: "application/json",
         addRandomSuffix: false,
+        ...opcionesBlob(),
         ...extra,
       }),
     );

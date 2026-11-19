@@ -33,6 +33,6 @@ EarPiano es la app de tus canciones y teoría. Al terminar una sesión, toca **S
 ## Conectar con EarPiano (una sola vez, en Vercel)
 
 1. En los dos proyectos de Vercel usa el **mismo `SESSION_SECRET`**: el pase de 30 días vale en las dos apps.
-2. Conecta los dos proyectos al **mismo almacén de Vercel Blob**.
+2. En el almacén de Blob de EarPiano copia su token de lectura y escritura y ponlo en el proyecto de TimerPiano como variable `EARPIANO_BLOB_TOKEN`. Así TimerPiano guarda en el almacén de EarPiano aunque estén en cuentas distintas de Vercel.
 
 Cada vez que sincronizas, TimerPiano deja un resumen en `timerpiano/totales.json` y EarPiano lo lee. No se duplica nada.

@@ -13,6 +13,12 @@ process.env.SESSION_SECRET = contrato.pase.secreto; process.env.ADMIN_PASSWORD =
 const tot = await cargarLib('lib/server/totales.ts'), auth = await cargarLib('lib/server/auth.ts');
 const { sesiones, archivo } = contrato.totales;
 
+test('almacén compartido entre cuentas: con EARPIANO_BLOB_TOKEN se usa ese token; sin él, el almacén propio', async () => {
+  const alm = await cargarLib('lib/server/almacen.ts');
+  assert.deepEqual(alm.opcionesBlob({}), {}); assert.deepEqual(alm.opcionesBlob({ EARPIANO_BLOB_TOKEN: '' }), {}); assert.deepEqual(alm.opcionesBlob({ EARPIANO_BLOB_TOKEN: '   ' }), {});
+  assert.deepEqual(alm.opcionesBlob({ EARPIANO_BLOB_TOKEN: ' vercel_blob_rw_abc ' }), { token: 'vercel_blob_rw_abc' });
+});
+
 test('calcularTotales produce exactamente el archivo del contrato', () => {
   const t = tot.calcularTotales(sesiones, 123);
   assert.equal(t.actualizado, 123); const { actualizado, ...resto } = t;
