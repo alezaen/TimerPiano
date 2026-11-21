@@ -102,7 +102,7 @@ function MinutesField({ value, label, onCommit }: { value: number; label: string
         onKeyDown={(e) => {
           if (e.key === "Enter") e.currentTarget.blur();
         }}
-        className="num h-12 w-full rounded-xl border border-edge bg-ink/60 pr-9 text-center text-xl font-semibold outline-none focus:border-gold"
+        className="num h-12 w-full pozo rounded-xl border border-transparent pr-9 text-center text-xl font-semibold outline-none focus:border-gold"
       />
       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-dim">min</span>
     </div>
@@ -190,7 +190,7 @@ export default function Setup() {
         </div>
         {run > 0 && (
           <span className="num mb-1 rounded-full border border-line bg-card px-3 py-1 text-xs text-dim">
-            Racha <span className="font-semibold text-fg">{run}</span>
+            <span aria-hidden>🔥</span> Racha <span className="font-semibold text-fg">{run}</span>
           </span>
         )}
       </section>
@@ -210,13 +210,14 @@ export default function Setup() {
                   <p className="font-medium leading-tight">{a.label}</p>
                   <p className="mt-0.5 text-xs text-dim">{a.hint}</p>
                 </div>
+                {m > 0 && total > 0 && <span className="num ml-auto self-start text-xs text-dim">{Math.round((m / total) * 100)}% del día</span>}
               </div>
               <div className="mt-3 flex items-center gap-2">
                 <HoldButton
                   onStep={() => change(a.id, -STEP_MINUTES)}
                   atLimit={m <= 0}
                   label={`Menos minutos de ${a.label}`}
-                  className="flex h-12 w-14 shrink-0 items-center justify-center rounded-xl border border-edge bg-line/60 text-2xl font-medium text-fg"
+                  className="tecla flex h-12 w-14 shrink-0 items-center justify-center rounded-xl bg-line/60 text-2xl font-medium text-fg"
                 >
                   −
                 </HoldButton>
@@ -232,7 +233,7 @@ export default function Setup() {
                   onStep={() => change(a.id, STEP_MINUTES)}
                   atLimit={m >= MAX_AREA_MINUTES}
                   label={`Más minutos de ${a.label}`}
-                  className="flex h-12 w-14 shrink-0 items-center justify-center rounded-xl border border-edge bg-line/60 text-2xl font-medium text-fg"
+                  className="tecla flex h-12 w-14 shrink-0 items-center justify-center rounded-xl bg-line/60 text-2xl font-medium text-fg"
                 >
                   +
                 </HoldButton>
@@ -256,7 +257,7 @@ export default function Setup() {
                 setBlockMin(n);
               }}
               className={`num h-11 rounded-xl text-sm font-semibold transition-colors ${
-                blockMin === n ? "bg-gold text-ink" : "text-dim"
+                blockMin === n ? "glow-gold bg-gold text-ink" : "text-dim"
               }`}
             >
               {n} min
@@ -275,7 +276,7 @@ export default function Setup() {
               setSeed((s) => s + 1);
             }}
             disabled={blocks.length < 2}
-            className="rounded-lg px-2 py-1 text-xs font-semibold text-gold disabled:opacity-30"
+            className="-my-2 rounded-lg px-3 py-3 text-xs font-semibold text-gold disabled:opacity-30"
           >
             Mezclar de nuevo
           </button>
@@ -330,7 +331,7 @@ export default function Setup() {
           <button
             onClick={go}
             disabled={blocks.length === 0}
-            className="h-14 w-full rounded-2xl bg-gold text-base font-semibold text-ink shadow-lg shadow-black/40 transition-transform active:scale-[0.98] disabled:opacity-40"
+            className="h-14 w-full rounded-2xl glow-gold bg-gold text-base font-semibold text-ink transition-transform active:scale-[0.98] disabled:opacity-40"
           >
             Empezar · {total} min
           </button>

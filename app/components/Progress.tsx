@@ -6,6 +6,11 @@ import { AREAS, sumSeconds } from "@/lib/areas";
 import { historyOf, lastDays, streak } from "@/lib/stats";
 
 const mins = (s: number) => Math.round(s / 60);
+/** 45 min · 1 h 05 */
+const dur = (s: number) => {
+  const m = Math.round(s / 60);
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}`;
+};
 
 export default function Progress() {
   const sessions = useStore((s) => s.sessions);
@@ -20,6 +25,8 @@ export default function Progress() {
   }));
   const maxArea = Math.max(1, ...byArea.map((a) => a.sec));
   const run = streak(history);
+  const activeDays = totals.filter((t) => t >= 60).length;
+  const best = totals.reduce((bi, t, i) => (t > totals[bi] ? i : bi), 0);
 
   if (weekSec === 0) {
     const hasHistory = Object.keys(history).length > 0;
@@ -52,30 +59,40 @@ export default function Progress() {
         Tu semana
       </h2>
 
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-line bg-card p-4">
-          <p className="num text-3xl font-semibold">{run}</p>
-          <p className="mt-1 text-xs text-dim">{run === 1 ? "día de racha" : "días de racha"}</p>
-        </div>
-        <div className="rounded-2xl border border-line bg-card p-4">
-          <p className="num text-3xl font-semibold">
-            {mins(weekSec)}
-            <span className="ml-1 text-base text-dim">min</span>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-2xl border border-line bg-card px-2 py-3">
+          <p className="num text-2xl font-semibold leading-none">
+            {run > 0 && <span aria-hidden>🔥</span>}
+            {run}
           </p>
-          <p className="mt-1 text-xs text-dim">últimos 7 días</p>
+          <p className="mt-1.5 text-xs text-dim">{run === 1 ? "día de racha" : "días de racha"}</p>
+        </div>
+        <div className="rounded-2xl border border-line bg-card px-2 py-3">
+          <p className="num text-2xl font-semibold leading-none">{dur(weekSec)}</p>
+          <p className="mt-1.5 text-xs text-dim">últimos 7 días</p>
+        </div>
+        <div className="rounded-2xl border border-line bg-card px-2 py-3">
+          <p className="num text-2xl font-semibold leading-none">
+            {activeDays}
+            <span className="text-base text-dim">/7</span>
+          </p>
+          <p className="mt-1.5 text-xs text-dim">días practicados</p>
         </div>
       </div>
 
       <div className="mt-3 rounded-2xl border border-line bg-card p-4">
-        <div className="flex h-28 items-end gap-2">
+        <div className="flex h-32 items-end gap-2">
           {days.map((d, i) => {
             const day = history[d.key];
             const heightPct = (totals[i] / maxSec) * 100;
             return (
-              <div key={d.key} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
+              <div key={d.key} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
+                <span className={`num h-3 text-[10px] leading-none ${i === best ? "font-semibold text-fg" : "text-dim"}`}>
+                  {totals[i] > 0 ? mins(totals[i]) : ""}
+                </span>
                 <div className="flex w-full flex-1 items-end">
                   <div
-                    className="flex w-full flex-col-reverse overflow-hidden rounded-md bg-line/60"
+                    className={`flex w-full flex-col-reverse overflow-hidden rounded-lg bg-line/60 ${d.isToday ? "ring-1 ring-gold/70" : ""}`}
                     style={{ height: totals[i] > 0 ? `${Math.max(heightPct, 6)}%` : "4px" }}
                     aria-label={`${mins(totals[i])} minutos`}
                   >
@@ -95,27 +112,30 @@ export default function Progress() {
             );
           })}
         </div>
+        {totals[best] > 0 && (
+          <p className="mt-3 border-t border-line pt-3 text-center text-xs text-dim">
+            Mejor día: <span className="font-semibold text-fg">{days[best].isToday ? "hoy" : days[best].label}</span> · {dur(totals[best])}
+          </p>
+        )}
       </div>
 
-      {weekSec > 0 && (
-        <div className="mt-3 space-y-3 rounded-2xl border border-line bg-card p-4">
-          {byArea.map((a) => (
-            <div key={a.id}>
-              <div className="flex justify-between text-xs">
-                <span className="text-dim">{a.label}</span>
-                <span className="num text-fg">{mins(a.sec)} min</span>
-              </div>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${(a.sec / maxArea) * 100}%`, background: a.color }}
-                />
-              </div>
+      <div className="mt-3 space-y-3.5 rounded-2xl border border-line bg-card p-4">
+        {byArea.map((a) => (
+          <div key={a.id}>
+            <div className="flex items-baseline justify-between gap-3 text-xs">
+              <span style={{ color: a.color }} className="font-medium">
+                {a.label}
+              </span>
+              <span className="num text-dim">
+                <span className="text-fg">{dur(a.sec)}</span> · {Math.round((a.sec / weekSec) * 100)}%
+              </span>
             </div>
-          ))}
-        </div>
-      )}
+            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-line">
+              <div className="h-full rounded-full" style={{ width: `${(a.sec / maxArea) * 100}%`, background: a.color }} />
+            </div>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
-

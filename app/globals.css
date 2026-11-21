@@ -137,7 +137,27 @@ button {
   }
 }
 
-/* Brillo de borde de vidrio en las tarjetas (arriba, una línea de luz). */
+/* Relieve de "tecla" (reflejo arriba, aro fino y sombra abajo): da volumen sin desenfoque, ligero para el teléfono. */
+.tecla,
 .border-line.bg-card {
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 0 0 1px rgb(255 255 255 / 0.14),
+    inset 0 -1px 0 rgb(0 0 0 / 0.28);
+  border-color: transparent;
+}
+
+/* Campo hundido, como un pocito donde se escribe. */
+.pozo {
+  background: rgb(0 0 0 / 0.32);
+  box-shadow:
+    inset 0 1px 3px rgb(0 0 0 / 0.5),
+    0 0 0 1px rgb(255 255 255 / 0.1);
+}
+
+/* Brillo del botón principal y de lo seleccionado. */
+.glow-gold {
+  box-shadow:
+    0 0 24px rgb(46 242 224 / 0.3),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
 }
