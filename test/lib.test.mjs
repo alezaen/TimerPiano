@@ -107,3 +107,31 @@ test('resumen de sesión: plannedBy suma lo planeado por área y secondsInLastDa
     assert.equal(stats.secondsInLastDays({}, 7), 0);
   });
 });
+
+test('áreas personalizables: mezcla con los valores de fábrica, recorta y descarta lo inválido; los ids no cambian', () => {
+  // Sin nada personalizado: igual a los valores de fábrica.
+  assert.deepEqual(areas.mergeAreas(), areas.AREAS);
+  assert.deepEqual(areas.mergeAreas({}), areas.AREAS);
+  // Se cambia solo lo pedido; lo demás queda de fábrica.
+  const m = areas.mergeAreas({ hanon: { label: 'Escalas', color: '#4ADE80' } });
+  assert.equal(m[1].id, 'hanon');
+  assert.equal(m[1].label, 'Escalas');
+  assert.equal(m[1].color, '#4ade80', 'el color se guarda en minúsculas');
+  assert.equal(m[1].hint, areas.AREAS[1].hint);
+  assert.deepEqual(m.map((a) => a.id), areas.AREA_IDS);
+  // Lo inválido se descarta y vuelve al valor de fábrica.
+  const malo = areas.limpiarConfig({ label: '   ', hint: 5, color: 'rojo' });
+  assert.deepEqual(malo, {});
+  assert.deepEqual(areas.limpiarConfig({ color: '#12345' }), {}, 'color de 5 dígitos no vale');
+  assert.deepEqual(areas.limpiarConfig({ color: 'javascript:alert(1)' }), {});
+  assert.deepEqual(areas.limpiarConfig(null), {});
+  assert.deepEqual(areas.limpiarConfig([1]), {});
+  // Largos máximos.
+  assert.equal(areas.limpiarConfig({ label: 'x'.repeat(100) }).label.length, areas.MAX_NOMBRE);
+  assert.equal(areas.limpiarConfig({ hint: 'y'.repeat(100) }).hint.length, areas.MAX_HINT);
+  assert.equal(areas.limpiarConfig({ label: '  Piano  ' }).label, 'Piano', 'se quitan los espacios de los lados');
+  // Solo las 4 áreas conocidas.
+  assert.deepEqual(areas.limpiarOverrides({ inventada: { label: 'X' }, oido: { label: 'Oído' }, thompson: {} }), { oido: { label: 'Oído' } });
+  assert.deepEqual(areas.limpiarOverrides('no'), {});
+  assert.deepEqual(areas.limpiarOverrides(null), {});
+});

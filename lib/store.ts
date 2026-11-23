@@ -2,8 +2,8 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { AreaId, Block, Minutes, Seconds, Session, SessionRecord } from "./types";
-import { emptySeconds, sumSeconds } from "./areas";
+import type { AreaConfig, AreaId, AreaOverrides, Block, Minutes, Seconds, Session, SessionRecord } from "./types";
+import { emptySeconds, limpiarConfig, sumSeconds } from "./areas";
 import { dayKey } from "./stats";
 import { MAX_SESSIONS, mezclar, pendientes, uid } from "./sync";
 import { sanear } from "./sanear";
@@ -19,6 +19,8 @@ interface State {
   minutes: Minutes;
   blockMin: number;
   sound: boolean;
+  /** Nombre, descripción y color que la persona le puso a cada área (solo en este aparato). */
+  areaNames: AreaOverrides;
   sessions: SessionRecord[];
   session: Session | null;
 
@@ -36,6 +38,9 @@ interface State {
   setMinutes: (id: AreaId, minutes: number) => void;
   setBlockMin: (n: number) => void;
   toggleSound: () => void;
+  /** Cambia cómo se ve un área. Un campo vacío o inválido vuelve al valor de fábrica. */
+  setAreaConfig: (id: AreaId, patch: Partial<AreaConfig>) => void;
+  resetArea: (id: AreaId) => void;
 
   start: (blocks: Block[]) => void;
   pause: () => void;
@@ -96,6 +101,7 @@ export const useStore = create<State>()(
       minutes: { solfeo: 10, hanon: 10, oido: 10, thompson: 10 },
       blockMin: 5,
       sound: true,
+      areaNames: {},
       sessions: [],
       session: null,
       ajustesTs: 0,
@@ -112,6 +118,27 @@ export const useStore = create<State>()(
         })),
       setBlockMin: (n) => set({ blockMin: n, ajustesTs: Date.now() }),
       toggleSound: () => set((s) => ({ sound: !s.sound })),
+
+      setAreaConfig: (id, patch) =>
+        set((s) => {
+          // Un texto vacío borra ese campo (vuelve al valor de fábrica); lo demás se junta con lo que ya había.
+          const actual: Record<string, unknown> = { ...(s.areaNames[id] ?? {}) };
+          for (const [k, v] of Object.entries(patch)) {
+            if (typeof v === "string" && v.trim() === "") delete actual[k];
+            else actual[k] = v;
+          }
+          const limpio = limpiarConfig(actual);
+          const areaNames = { ...s.areaNames };
+          if (Object.keys(limpio).length) areaNames[id] = limpio;
+          else delete areaNames[id];
+          return { areaNames };
+        }),
+      resetArea: (id) =>
+        set((s) => {
+          const areaNames = { ...s.areaNames };
+          delete areaNames[id];
+          return { areaNames };
+        }),
 
       start: (blocks) => {
         if (blocks.length === 0) return;
@@ -317,6 +344,7 @@ export const useStore = create<State>()(
         minutes: s.minutes,
         blockMin: s.blockMin,
         sound: s.sound,
+        areaNames: s.areaNames,
         sessions: s.sessions,
         session: s.session,
         ajustesTs: s.ajustesTs,

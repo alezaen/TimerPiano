@@ -1,5 +1,5 @@
 import type { Block, Minutes, Seconds, Session, SessionRecord } from "./types";
-import { AREA_IDS, emptySeconds } from "./areas";
+import { AREA_IDS, emptySeconds, limpiarOverrides } from "./areas";
 
 const MAX_MINUTOS = 120;
 const MAX_SEGUNDOS = 43200;
@@ -74,6 +74,7 @@ export function sanear(guardado: unknown): Record<string, unknown> {
   }
   if ([3, 5, 10].includes(guardado.blockMin as number)) out.blockMin = guardado.blockMin;
   if (typeof guardado.sound === "boolean") out.sound = guardado.sound;
+  out.areaNames = limpiarOverrides(guardado.areaNames);
   out.sessions = sesionesLimpias(guardado.sessions);
   const sesion = sesionEnCurso(guardado.session);
   if (sesion) out.session = sesion;

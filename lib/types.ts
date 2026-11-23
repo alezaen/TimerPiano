@@ -1,5 +1,11 @@
 export type AreaId = "solfeo" | "hanon" | "oido" | "thompson";
 
+/** Cómo se ve un área: lo único que la persona puede cambiar (los ids no cambian: los usan el servidor y EarPiano). */
+export type AreaConfig = { label: string; hint: string; color: string };
+export type Area = { id: AreaId } & AreaConfig;
+/** Lo que la persona personalizó, por área. Lo que falta toma el valor de fábrica. */
+export type AreaOverrides = Partial<Record<AreaId, Partial<AreaConfig>>>;
+
 export type Minutes = Record<AreaId, number>;
 export type Seconds = Record<AreaId, number>;
 
