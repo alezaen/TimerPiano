@@ -5,6 +5,8 @@ import { useStore } from "@/lib/store";
 import { sumSeconds } from "@/lib/areas";
 import { useAreas } from "@/lib/useAreas";
 import { historyOf, lastDays, streak } from "@/lib/stats";
+import { useT } from "@/lib/useT";
+import { DIAS_SEMANA } from "@/lib/i18n";
 
 const mins = (s: number) => Math.round(s / 60);
 /** 45 min · 1 h 05 */
@@ -15,9 +17,11 @@ const dur = (s: number) => {
 
 export default function Progress() {
   const sessions = useStore((s) => s.sessions);
+  const lang = useStore((s) => s.lang);
+  const t = useT();
   const { areas: AREAS } = useAreas();
   const history = useMemo(() => historyOf(sessions), [sessions]);
-  const days = lastDays(7);
+  const days = lastDays(7, DIAS_SEMANA[lang]);
   const totals = days.map((d) => sumSeconds(history[d.key]));
   const maxSec = Math.max(30 * 60, ...totals);
   const weekSec = totals.reduce((a, b) => a + b, 0);
@@ -35,7 +39,7 @@ export default function Progress() {
     return (
       <section className="mt-10" aria-labelledby="progreso">
         <h2 id="progreso" className="text-xs font-semibold uppercase tracking-[0.18em] text-dim">
-          Tu semana
+          {t("tuSemana")}
         </h2>
         <div className="mt-3 rounded-2xl border border-dashed border-edge bg-card p-5 text-center">
           <div className="flex justify-center gap-3" aria-hidden>
@@ -47,9 +51,9 @@ export default function Progress() {
             ))}
           </div>
           <p className="mt-4 text-sm font-medium">
-            {hasHistory ? "Esta semana aún no practicas" : "Completa tu primera sesión para empezar tu racha"}
+            {hasHistory ? t("semanaSinPractica") : t("primeraSesion")}
           </p>
-          <p className="mt-1 text-xs text-dim">Aquí verás tus minutos por día y por área.</p>
+          <p className="mt-1 text-xs text-dim">{t("aquiVeras")}</p>
         </div>
       </section>
     );
@@ -58,7 +62,7 @@ export default function Progress() {
   return (
     <section className="mt-10" aria-labelledby="progreso">
       <h2 id="progreso" className="text-xs font-semibold uppercase tracking-[0.18em] text-dim">
-        Tu semana
+        {t("tuSemana")}
       </h2>
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
@@ -67,18 +71,18 @@ export default function Progress() {
             {run > 0 && <span aria-hidden>🔥</span>}
             {run}
           </p>
-          <p className="mt-1.5 text-xs text-dim">{run === 1 ? "día de racha" : "días de racha"}</p>
+          <p className="mt-1.5 text-xs text-dim">{run === 1 ? t("diaRacha") : t("diasRacha")}</p>
         </div>
         <div className="rounded-2xl border border-line bg-card px-2 py-3">
           <p className="num text-2xl font-semibold leading-none">{dur(weekSec)}</p>
-          <p className="mt-1.5 text-xs text-dim">últimos 7 días</p>
+          <p className="mt-1.5 text-xs text-dim">{t("ultimos7")}</p>
         </div>
         <div className="rounded-2xl border border-line bg-card px-2 py-3">
           <p className="num text-2xl font-semibold leading-none">
             {activeDays}
             <span className="text-base text-dim">/7</span>
           </p>
-          <p className="mt-1.5 text-xs text-dim">días practicados</p>
+          <p className="mt-1.5 text-xs text-dim">{t("diasPracticados")}</p>
         </div>
       </div>
 
@@ -96,7 +100,7 @@ export default function Progress() {
                   <div
                     className={`flex w-full flex-col-reverse overflow-hidden rounded-lg bg-line/60 ${d.isToday ? "ring-1 ring-gold/70" : ""}`}
                     style={{ height: totals[i] > 0 ? `${Math.max(heightPct, 6)}%` : "4px" }}
-                    aria-label={`${mins(totals[i])} minutos`}
+                    aria-label={t("minutosAria", { n: mins(totals[i]) })}
                   >
                     {day &&
                       AREAS.map((a) => (
@@ -116,7 +120,7 @@ export default function Progress() {
         </div>
         {totals[best] > 0 && (
           <p className="mt-3 border-t border-line pt-3 text-center text-xs text-dim">
-            Mejor día: <span className="font-semibold text-fg">{days[best].isToday ? "hoy" : days[best].label}</span> · {dur(totals[best])}
+            {t("mejorDia")} <span className="font-semibold text-fg">{days[best].isToday ? t("hoy") : days[best].label}</span> · {dur(totals[best])}
           </p>
         )}
       </div>

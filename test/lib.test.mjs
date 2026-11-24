@@ -155,3 +155,15 @@ test('idiomas: lo guardado en el aparato solo acepta es o en', () => {
   assert.equal('lang' in sanear.sanear({ lang: 'fr' }), false);
   assert.equal('lang' in sanear.sanear({ lang: 3 }), false);
 });
+
+test('idiomas: el inglés tiene exactamente las mismas claves y días de la semana en cada idioma', () => {
+  assert.deepEqual(Object.keys(i18n.TEXTOS.en).sort(), Object.keys(i18n.TEXTOS.es).sort());
+  for (const l of ['es', 'en']) for (const [k, v] of Object.entries(i18n.TEXTOS[l])) assert.ok(v.length > 0, `${l}.${k} vacío`);
+  // las variables {x} de cada clave son las mismas en los dos idiomas
+  const vars = (x) => (x.match(/\{\w+\}/g) ?? []).sort().join();
+  for (const k of Object.keys(i18n.TEXTOS.es)) assert.equal(vars(i18n.TEXTOS.en[k]), vars(i18n.TEXTOS.es[k]), k);
+  assert.equal(i18n.DIAS_SEMANA.es.length, 7); assert.equal(i18n.DIAS_SEMANA.en.length, 7);
+  const dias = stats.lastDays(7, i18n.DIAS_SEMANA.en);
+  assert.equal(dias.length, 7); assert.ok(dias.every((d) => i18n.DIAS_SEMANA.en.includes(d.label)));
+  assert.ok(stats.lastDays(7).every((d) => i18n.DIAS_SEMANA.es.includes(d.label))); // sin segundo argumento sigue en español
+});

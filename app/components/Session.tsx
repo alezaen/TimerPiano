@@ -8,6 +8,8 @@ import { dayKey, historyOf, plannedBy, secondsInLastDays, streak } from "@/lib/s
 import { playBlockStart, playCountdown, playPause, playResume, playSessionEnd } from "@/lib/audio";
 import { vibrate } from "@/lib/haptics";
 import { repertorioConSesion } from "@/lib/links";
+import { useT } from "@/lib/useT";
+import type { Clave } from "@/lib/i18n";
 
 const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 const mins = (s: number) => Math.round(s / 60);
@@ -18,11 +20,11 @@ const dur = (s: number) => {
 };
 
 /** Título y frase del resumen según lo que se logró frente a lo planeado. */
-function mensaje(pct: number, total: number, run: number) {
-  if (total === 0) return { title: "Sesión terminada", text: "No alcanzaste a practicar esta vez. Mañana lo retomas." };
-  if (pct >= 100) return { title: "¡Sesión completa!", text: run >= 3 ? `Cumpliste todo y ya llevas ${run} días seguidos.` : "Cumpliste todo lo que planeaste." };
-  if (pct >= 70) return { title: "¡Gran sesión!", text: "Casi todo hecho. Eso es constancia." };
-  return { title: "Sesión guardada", text: "Cada minuto suma. Lo importante es volver mañana." };
+function mensaje(pct: number, total: number, run: number): { title: Clave; text: Clave; n?: number } {
+  if (total === 0) return { title: "sesionTerminada", text: "noAlcanzaste" };
+  if (pct >= 100) return { title: "sesionCompleta", text: run >= 3 ? "cumplisteRacha" : "cumpliste", n: run };
+  if (pct >= 70) return { title: "granSesion", text: "casiTodo" };
+  return { title: "sesionGuardada", text: "cadaMinuto" };
 }
 
 export default function Session() {
@@ -33,6 +35,7 @@ export default function Session() {
 
 function Running() {
   const { session, sound, pause, resume, skip, finish, tick } = useStore();
+  const t = useT();
   const { byId: AREA_BY_ID } = useAreas();
   const [now, setNow] = useState(() => Date.now());
   const [confirmEnd, setConfirmEnd] = useState(false);
@@ -141,7 +144,7 @@ function Running() {
 
       <div className="relative flex flex-1 flex-col items-center justify-center text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-dim">
-          Bloque {s.index + 1} de {s.blocks.length}
+          {t("bloqueDe", { i: s.index + 1, n: s.blocks.length })}
         </p>
         <h2 key={s.index} className="tp-fade mt-3 text-4xl font-semibold tracking-tight" style={{ color: area.color }}>
           {area.label}
@@ -150,7 +153,7 @@ function Running() {
 
         <button
           onClick={toggle}
-          aria-label={running ? "Pausar" : "Seguir"}
+          aria-label={running ? t("pausar") : t("seguir")}
           className={`relative mt-7 aspect-square w-[min(76vw,310px)] rounded-full transition-transform active:scale-[0.97] ${
             running && secs <= 10 ? "tp-pulse" : ""
           }`}
@@ -177,21 +180,21 @@ function Running() {
             >
               {mmss(secs)}
             </span>
-            <span className="mt-3 text-xs font-medium text-dim">{running ? "Toca para pausar" : "En pausa · toca para seguir"}</span>
+            <span className="mt-3 text-xs font-medium text-dim">{running ? t("tocaPausar") : t("enPausa")}</span>
           </div>
         </button>
 
         <div className="mt-8 h-6 text-sm text-dim">
           {next ? (
             <>
-              Sigue:{" "}
+              {t("sigue")}{" "}
               <span className="font-medium" style={{ color: AREA_BY_ID[next.area].color }}>
                 {AREA_BY_ID[next.area].label}
               </span>{" "}
               · {mins(next.seconds)} min
             </>
           ) : (
-            "Este es el último bloque"
+            t("ultimoBloque")
           )}
         </div>
       </div>
@@ -202,7 +205,7 @@ function Running() {
             onClick={toggle}
             className="h-16 flex-1 rounded-2xl bg-gold text-lg font-semibold text-ink transition-transform active:scale-[0.98]"
           >
-            {running ? "Pausar" : "Seguir"}
+            {running ? t("pausar") : t("seguir")}
           </button>
           <button
             onClick={() => {
@@ -211,24 +214,24 @@ function Running() {
             }}
             className="h-16 w-28 rounded-2xl border border-line bg-card text-base font-medium text-fg transition-transform active:scale-[0.97] active:bg-line"
           >
-            Saltar
+            {t("saltar")}
           </button>
         </div>
 
         <div className="mt-3 flex h-11 items-center justify-center">
           {confirmEnd ? (
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-dim">¿Terminar y guardar lo practicado?</span>
+              <span className="text-dim">{t("terminarPregunta")}</span>
               <button onClick={finish} className="rounded-lg px-3 py-2 font-semibold text-gold">
-                Sí
+                {t("si")}
               </button>
               <button onClick={() => setConfirmEnd(false)} className="rounded-lg px-3 py-2 text-dim">
-                No
+                {t("no")}
               </button>
             </div>
           ) : (
             <button onClick={() => setConfirmEnd(true)} className="rounded-lg px-4 py-2 text-sm text-dim">
-              Terminar sesión
+              {t("terminarSesion")}
             </button>
           )}
         </div>
@@ -239,6 +242,7 @@ function Running() {
 
 function Done() {
   const { session, sessions, close, sound } = useStore();
+  const t = useT();
   const { areas: AREAS } = useAreas();
   const played = useRef(false);
 
@@ -259,7 +263,9 @@ function Done() {
   const today = sumSeconds(history[dayKey()]);
   const week = secondsInLastDays(history, 7);
   const rec = s.recordId ? sessions.find((x) => x.id === s.recordId) : undefined;
-  const { title, text } = mensaje(pct, total, run);
+  const msg = mensaje(pct, total, run);
+  const title = t(msg.title);
+  const text = t(msg.text, { n: msg.n ?? 0 });
   const rows = AREAS.filter((a) => plan[a.id] > 0 || s.done[a.id] > 0);
 
   // Anillo: un arco por área (su color), del tamaño de lo practicado frente a lo planeado.
@@ -284,11 +290,11 @@ function Done() {
       />
 
       <div className="relative flex flex-1 flex-col justify-center py-6">
-        <p className="tp-fade text-center text-xs font-semibold uppercase tracking-[0.22em] text-gold">{total > 0 ? "Sesión guardada" : "Sesión terminada"}</p>
+        <p className="tp-fade text-center text-xs font-semibold uppercase tracking-[0.22em] text-gold">{total > 0 ? t("sesionGuardada") : t("sesionTerminada")}</p>
         <h1 className="tp-fade mt-2 text-center text-3xl font-semibold tracking-tight">{title}</h1>
         <p className="tp-fade mx-auto mt-2 max-w-[18rem] text-center text-sm text-dim">{text}</p>
 
-        <div className="relative mx-auto mt-6 aspect-square w-[min(68vw,260px)]" role="img" aria-label={`${mins(total)} minutos practicados de ${mins(planned)} planeados`}>
+        <div className="relative mx-auto mt-6 aspect-square w-[min(68vw,260px)]" role="img" aria-label={t("anilloAria", { a: mins(total), b: mins(planned) })}>
           <svg viewBox="0 0 100 100" className="absolute inset-0 -rotate-90" aria-hidden>
             <circle cx="50" cy="50" r={R} fill="none" stroke="var(--color-line)" strokeWidth="5" />
             {arcs.map((a) => (
@@ -309,8 +315,8 @@ function Done() {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <p className="num text-[clamp(3.6rem,19vw,5rem)] font-semibold leading-none tracking-tight">{mins(total)}</p>
-            <p className="mt-1 text-sm font-medium text-dim">min practicados</p>
-            {planned > 0 && <p className="num mt-1 text-xs text-dim">{pct}% de lo planeado</p>}
+            <p className="mt-1 text-sm font-medium text-dim">{t("minPracticados")}</p>
+            {planned > 0 && <p className="num mt-1 text-xs text-dim">{t("pctPlaneado", { n: pct })}</p>}
           </div>
         </div>
 
@@ -320,15 +326,15 @@ function Done() {
               {run > 0 && <span aria-hidden>🔥</span>}
               {run}
             </p>
-            <p className="mt-1.5 text-xs text-dim">{run === 1 ? "día de racha" : "días de racha"}</p>
+            <p className="mt-1.5 text-xs text-dim">{run === 1 ? t("diaRacha") : t("diasRacha")}</p>
           </div>
           <div className="rounded-2xl border border-line bg-card px-2 py-3">
             <p className="num text-2xl font-semibold leading-none">{dur(today)}</p>
-            <p className="mt-1.5 text-xs text-dim">hoy</p>
+            <p className="mt-1.5 text-xs text-dim">{t("hoy")}</p>
           </div>
           <div className="rounded-2xl border border-line bg-card px-2 py-3">
             <p className="num text-2xl font-semibold leading-none">{dur(week)}</p>
-            <p className="mt-1.5 text-xs text-dim">últimos 7 días</p>
+            <p className="mt-1.5 text-xs text-dim">{t("ultimos7")}</p>
           </div>
         </div>
 
@@ -345,7 +351,7 @@ function Done() {
                   </span>
                   <span className="num text-dim">
                     {ok && (
-                      <span aria-label="completado" className="mr-1.5 font-semibold" style={{ color: a.color }}>
+                      <span aria-label={t("completado")} className="mr-1.5 font-semibold" style={{ color: a.color }}>
                         ✓
                       </span>
                     )}
@@ -362,7 +368,7 @@ function Done() {
               </div>
             );
           })}
-          {total === 0 && <p className="text-sm text-dim">No alcanzaste a practicar nada esta vez.</p>}
+          {total === 0 && <p className="text-sm text-dim">{t("noPracticaste")}</p>}
         </div>
       </div>
 
@@ -372,14 +378,14 @@ function Done() {
             href={repertorioConSesion(rec)}
             className="mb-3 flex h-12 w-full items-center justify-center rounded-2xl border border-line bg-card text-sm font-semibold transition-transform active:scale-[0.98]"
           >
-            Sumar a EarPiano
+            {t("sumarEarPiano")}
           </a>
         )}
         <button
           onClick={close}
           className="h-14 w-full rounded-2xl bg-gold text-base font-semibold text-ink transition-transform active:scale-[0.98]"
         >
-          Volver al inicio
+          {t("volverInicio")}
         </button>
       </div>
     </main>
