@@ -7,7 +7,7 @@ import { emptySeconds, limpiarConfig, limpiarOverrides, sumSeconds } from "./are
 import { dayKey } from "./stats";
 import { MAX_SESSIONS, mezclar, pendientes, uid } from "./sync";
 import { sanear } from "./sanear";
-import { LANG_POR_DEFECTO, type Lang } from "./i18n";
+import { LANG_POR_DEFECTO, t, type Lang } from "./i18n";
 
 export const MAX_AREA_MINUTES = 120;
 export const STEP_MINUTES = 5;
@@ -246,12 +246,12 @@ export const useStore = create<State>()(
             body: JSON.stringify({ clave }),
           });
           const data = await res.json().catch(() => ({}));
-          if (!res.ok) return (data as { error?: string }).error ?? "No se pudo entrar";
+          if (!res.ok) return (data as { error?: string }).error ?? t(get().lang, "noSePudoEntrar");
           set({ auth: { token: data.token, expira: data.expira }, syncState: "idle", syncError: null });
           await get().sync();
           return null;
         } catch {
-          return "Sin conexión. Intenta de nuevo.";
+          return t(get().lang, "sinConexionReintenta");
         }
       },
 
@@ -263,7 +263,7 @@ export const useStore = create<State>()(
         const { auth } = st;
         if (!auth) return;
         if (auth.expira < Date.now()) {
-          set({ auth: null, syncState: "idle", syncError: "Tu sesión venció. Vuelve a conectar." });
+          set({ auth: null, syncState: "idle", syncError: t(get().lang, "sesionVencio") });
           return;
         }
         set({ syncState: "syncing", syncError: null });
@@ -280,11 +280,11 @@ export const useStore = create<State>()(
           });
           const data = await res.json().catch(() => ({}));
           if (res.status === 401) {
-            set({ auth: null, syncState: "idle", syncError: "Tu sesión venció. Vuelve a conectar." });
+            set({ auth: null, syncState: "idle", syncError: t(get().lang, "sesionVencio") });
             return;
           }
           if (!res.ok) {
-            set({ syncState: "error", syncError: (data as { error?: string }).error ?? "No se pudo sincronizar" });
+            set({ syncState: "error", syncError: (data as { error?: string }).error ?? t(get().lang, "noSePudoSync") });
             return;
           }
           const { sesiones, ajustes } = data as {
@@ -309,7 +309,7 @@ export const useStore = create<State>()(
           set(patch);
           if (pendientes(get().sessions).length > 0 && subir.length === 100) void get().sync();
         } catch {
-          set({ syncState: "error", syncError: "Sin conexión. Se sincroniza cuando vuelva." });
+          set({ syncState: "error", syncError: t(get().lang, "sinConexionLuego") });
         }
       },
 

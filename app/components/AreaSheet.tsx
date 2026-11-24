@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { useAreas } from "@/lib/useAreas";
+import { useT } from "@/lib/useT";
 import { AREA_BY_ID, MAX_HINT, MAX_NOMBRE } from "@/lib/areas";
 import type { AreaId } from "@/lib/types";
 
@@ -12,6 +13,7 @@ const COLORES = ["#2ef2e0", "#ff8a3d", "#ff3d81", "#a98bff", "#4ade80", "#facc15
 /** Panel para cambiar el nombre, la descripción y el color de un área. El id no cambia. */
 export default function AreaSheet({ id, onClose }: { id: AreaId; onClose: () => void }) {
   const { byId } = useAreas();
+  const t = useT();
   const setAreaConfig = useStore((s) => s.setAreaConfig);
   const resetArea = useStore((s) => s.resetArea);
   const a = byId[id];
@@ -39,12 +41,12 @@ export default function AreaSheet({ id, onClose }: { id: AreaId; onClose: () => 
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Editar área"
+        aria-label={t("editarArea")}
         onClick={(e) => e.stopPropagation()}
         className="tp-up w-full max-w-md rounded-t-3xl border-t border-edge bg-ink/95 px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-5"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Editar área</h2>
+          <h2 className="text-lg font-semibold">{t("editarArea")}</h2>
           <button
             onClick={() => {
               guardarTextos();
@@ -52,12 +54,12 @@ export default function AreaSheet({ id, onClose }: { id: AreaId; onClose: () => 
             }}
             className="rounded-lg px-3 py-2 text-sm font-semibold text-gold"
           >
-            Listo
+            {t("listo")}
           </button>
         </div>
 
         <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.18em] text-dim" htmlFor="area-nombre">
-          Nombre
+          {t("nombre")}
         </label>
         <input
           id="area-nombre"
@@ -69,7 +71,7 @@ export default function AreaSheet({ id, onClose }: { id: AreaId; onClose: () => 
         />
 
         <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.18em] text-dim" htmlFor="area-desc">
-          Descripción
+          {t("descripcion")}
         </label>
         <input
           id="area-desc"
@@ -80,14 +82,14 @@ export default function AreaSheet({ id, onClose }: { id: AreaId; onClose: () => 
           className="mt-2 h-12 w-full rounded-2xl border border-edge bg-ink/60 px-4 text-base outline-none focus:border-gold"
         />
 
-        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-dim">Color</p>
-        <div className="mt-2 flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Color">
+        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-dim">{t("color")}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2" role="radiogroup" aria-label={t("color")}>
           {COLORES.map((c) => (
             <button
               key={c}
               role="radio"
               aria-checked={a.color.toLowerCase() === c}
-              aria-label={`Color ${c}`}
+              aria-label={t("colorN", { c })}
               onClick={() => setAreaConfig(id, { color: c })}
               className="h-9 w-9 rounded-full transition-transform active:scale-90"
               style={{ background: c, outline: a.color.toLowerCase() === c ? "2px solid #f4efe4" : "none", outlineOffset: 2 }}
@@ -95,7 +97,7 @@ export default function AreaSheet({ id, onClose }: { id: AreaId; onClose: () => 
           ))}
           <input
             type="color"
-            aria-label="Otro color"
+            aria-label={t("otroColor")}
             value={a.color}
             onChange={(e) => setAreaConfig(id, { color: e.target.value })}
             className="h-9 w-9 cursor-pointer rounded-full border border-edge bg-transparent p-0"
@@ -103,7 +105,7 @@ export default function AreaSheet({ id, onClose }: { id: AreaId; onClose: () => 
         </div>
 
         <button onClick={restaurar} className="mt-5 w-full rounded-2xl border border-line py-3 text-sm text-dim active:scale-[0.98]">
-          Volver a los valores de fábrica
+          {t("valoresFabrica")}
         </button>
       </div>
     </div>

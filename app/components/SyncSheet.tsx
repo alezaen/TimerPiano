@@ -3,18 +3,21 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { pendientes } from "@/lib/sync";
+import { useT } from "@/lib/useT";
+import type { Clave } from "@/lib/i18n";
 
-function hace(ms: number | null): string {
-  if (!ms) return "nunca";
+function hace(ms: number | null, t: (c: Clave, v?: Record<string, string | number>) => string): string {
+  if (!ms) return t("nunca");
   const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
-  if (s < 60) return "hace un momento";
-  if (s < 3600) return `hace ${Math.round(s / 60)} min`;
-  if (s < 86400) return `hace ${Math.round(s / 3600)} h`;
-  return `hace ${Math.round(s / 86400)} d`;
+  if (s < 60) return t("haceUnMomento");
+  if (s < 3600) return t("haceMin", { n: Math.round(s / 60) });
+  if (s < 86400) return t("haceH", { n: Math.round(s / 3600) });
+  return t("haceD", { n: Math.round(s / 86400) });
 }
 
 export default function SyncSheet({ onClose }: { onClose: () => void }) {
   const { auth, syncState, syncError, lastSync, sessions, login, logout, sync } = useStore();
+  const t = useT();
   const [clave, setClave] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
@@ -41,13 +44,13 @@ export default function SyncSheet({ onClose }: { onClose: () => void }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Sincronizar"
+        aria-label={t("sincronizar")}
         onClick={(e) => e.stopPropagation()}
         className="tp-up w-full max-w-md rounded-t-3xl border-t border-edge bg-ink/95 px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-5"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Sincronizar</h2>
-          <button onClick={onClose} aria-label="Cerrar" className="flex h-10 w-10 items-center justify-center rounded-full text-dim">
+          <h2 className="text-lg font-semibold">{t("sincronizar")}</h2>
+          <button onClick={onClose} aria-label={t("cerrar")} className="flex h-10 w-10 items-center justify-center rounded-full text-dim">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M6 6l12 12M18 6 6 18" />
             </svg>
@@ -57,15 +60,14 @@ export default function SyncSheet({ onClose }: { onClose: () => void }) {
         {!auth ? (
           <>
             <p className="mt-2 text-sm leading-relaxed text-dim">
-              Pon tu contraseña una vez en cada dispositivo. Tus sesiones y minutos quedan guardados y aparecen igual en el
-              teléfono y en la PC.
+              {t("syncExplica")}
             </p>
             {syncError && <p className="mt-3 text-sm text-gold">{syncError}</p>}
             <input
               type="password"
               autoComplete="current-password"
               enterKeyHint="go"
-              placeholder="Contraseña"
+              placeholder={t("contrasena")}
               value={clave}
               onChange={(e) => setClave(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && conectar()}
@@ -81,7 +83,7 @@ export default function SyncSheet({ onClose }: { onClose: () => void }) {
               disabled={!clave || cargando}
               className="mt-4 h-14 w-full rounded-2xl bg-gold text-base font-semibold text-ink transition-transform active:scale-[0.98] disabled:opacity-40"
             >
-              {cargando ? "Conectando…" : "Conectar"}
+              {cargando ? t("conectando") : t("conectar")}
             </button>
           </>
         ) : (
@@ -89,14 +91,14 @@ export default function SyncSheet({ onClose }: { onClose: () => void }) {
             <div className="mt-3 rounded-2xl border border-line bg-ink/40 p-4">
               <p className="text-sm font-medium">
                 {syncState === "syncing"
-                  ? "Sincronizando…"
+                  ? t("sincronizando")
                   : syncState === "error"
-                    ? "No se pudo sincronizar"
+                    ? t("noSePudoSync")
                     : pend > 0
-                      ? `${pend} ${pend === 1 ? "sesión por subir" : "sesiones por subir"}`
-                      : "Todo al día"}
+                      ? t(pend === 1 ? "sesionPorSubir" : "sesionesPorSubir", { n: pend })
+                      : t("todoAlDia")}
               </p>
-              <p className="mt-1 text-xs text-dim">Última vez: {hace(lastSync)}</p>
+              <p className="mt-1 text-xs text-dim">{t("ultimaVez", { cuando: hace(lastSync, t) })}</p>
               {syncError && <p className="mt-2 text-xs text-[#ff8a7a]">{syncError}</p>}
             </div>
             <button
@@ -104,7 +106,7 @@ export default function SyncSheet({ onClose }: { onClose: () => void }) {
               disabled={syncState === "syncing"}
               className="mt-4 h-14 w-full rounded-2xl bg-gold text-base font-semibold text-ink transition-transform active:scale-[0.98] disabled:opacity-40"
             >
-              Sincronizar ahora
+              {t("sincronizarAhora")}
             </button>
             <button
               onClick={() => {
@@ -113,7 +115,7 @@ export default function SyncSheet({ onClose }: { onClose: () => void }) {
               }}
               className="mt-2 h-12 w-full rounded-2xl text-sm text-dim"
             >
-              Desconectar este dispositivo
+              {t("desconectar")}
             </button>
           </>
         )}
