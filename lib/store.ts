@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { AreaConfig, AreaId, AreaOverrides, Block, Minutes, Seconds, Session, SessionRecord } from "./types";
-import { emptySeconds, limpiarConfig, sumSeconds } from "./areas";
+import { emptySeconds, limpiarConfig, limpiarOverrides, sumSeconds } from "./areas";
 import { dayKey } from "./stats";
 import { MAX_SESSIONS, mezclar, pendientes, uid } from "./sync";
 import { sanear } from "./sanear";
@@ -131,13 +131,13 @@ export const useStore = create<State>()(
           const areaNames = { ...s.areaNames };
           if (Object.keys(limpio).length) areaNames[id] = limpio;
           else delete areaNames[id];
-          return { areaNames };
+          return { areaNames, ajustesTs: Date.now() };
         }),
       resetArea: (id) =>
         set((s) => {
           const areaNames = { ...s.areaNames };
           delete areaNames[id];
-          return { areaNames };
+          return { areaNames, ajustesTs: Date.now() };
         }),
 
       start: (blocks) => {
@@ -269,7 +269,7 @@ export const useStore = create<State>()(
             body: JSON.stringify({
               token: auth.token,
               sesiones: subir,
-              ajustes: { minutes: st.minutes, blockMin: st.blockMin, ts: st.ajustesTs },
+              ajustes: { minutes: st.minutes, blockMin: st.blockMin, ts: st.ajustesTs, areaNames: st.areaNames },
             }),
           });
           const data = await res.json().catch(() => ({}));
@@ -283,7 +283,7 @@ export const useStore = create<State>()(
           }
           const { sesiones, ajustes } = data as {
             sesiones: SessionRecord[];
-            ajustes: { minutes: Minutes; blockMin: number; ts: number } | null;
+            ajustes: { minutes: Minutes; blockMin: number; ts: number; areaNames?: AreaOverrides } | null;
           };
           const ahora = get();
           const patch: Partial<State> = {
@@ -294,6 +294,7 @@ export const useStore = create<State>()(
           if (ajustes && ajustes.ts > ahora.ajustesTs) {
             patch.minutes = ajustes.minutes;
             patch.blockMin = ajustes.blockMin;
+            if (ajustes.areaNames) patch.areaNames = limpiarOverrides(ajustes.areaNames);
             patch.ajustesTs = ajustes.ts;
             patch.ajustesOk = ajustes.ts;
           } else {

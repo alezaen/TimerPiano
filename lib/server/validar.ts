@@ -1,5 +1,5 @@
-import { AREA_IDS } from "../areas";
-import type { Minutes, SessionRecord } from "../types";
+import { AREA_IDS, limpiarOverrides } from "../areas";
+import type { AreaOverrides, Minutes, SessionRecord } from "../types";
 
 export const MAX_SESIONES = 1000;
 export const MAX_AREA_MIN = 120;
@@ -15,7 +15,7 @@ function fechaReal(f: string): boolean {
   return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === f;
 }
 
-export type Ajustes = { minutes: Minutes; blockMin: number; ts: number };
+export type Ajustes = { minutes: Minutes; blockMin: number; ts: number; areaNames?: AreaOverrides };
 
 /** Devuelve la sesión limpia o null si no es válida (nada se "arregla" en silencio). */
 export function limpiarSesion(s: unknown): SessionRecord | null {
@@ -48,5 +48,7 @@ export function limpiarAjustes(a: unknown): Ajustes | null {
     if (!entero(m[id], 0, MAX_AREA_MIN)) return null;
     minutes[id] = m[id] as number;
   }
-  return { minutes, blockMin: o.blockMin as number, ts: o.ts };
+  // areaNames es opcional: un aparato viejo que no lo manda sigue funcionando. Lo dañado se descarta, nunca bloquea el sync.
+  const areaNames = limpiarOverrides(o.areaNames);
+  return { minutes, blockMin: o.blockMin as number, ts: o.ts, areaNames };
 }
