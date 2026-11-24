@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore, BLOCK_OPTIONS, MAX_AREA_MINUTES, STEP_MINUTES } from "@/lib/store";
-import { AREAS, AREA_BY_ID } from "@/lib/areas";
+import { useAreas } from "@/lib/useAreas";
+import type { AreaId } from "@/lib/types";
 import { buildBlocks } from "@/lib/interleave";
 import { requestAudioPermission, playStart, playStep, playTap, playShuffle } from "@/lib/audio";
 import { vibrate } from "@/lib/haptics";
@@ -11,6 +12,7 @@ import { historyOf, streak } from "@/lib/stats";
 import { pendientes } from "@/lib/sync";
 import Progress from "./Progress";
 import SyncSheet from "./SyncSheet";
+import AreaSheet from "./AreaSheet";
 
 /** Botón táctil: un toque suma una vez; mantenerlo apretado repite rápido. */
 function HoldButton({
@@ -113,6 +115,8 @@ export default function Setup() {
   const { minutes, blockMin, sound, sessions, auth, syncState, setMinutes, setBlockMin, toggleSound, start } = useStore();
   const [seed, setSeed] = useState(0);
   const [sheet, setSheet] = useState(false);
+  const [editando, setEditando] = useState<AreaId | null>(null);
+  const { areas: AREAS, byId: AREA_BY_ID } = useAreas();
   const history = useMemo(() => historyOf(sessions), [sessions]);
   const pend = pendientes(sessions).length;
   const dot = !auth ? null : syncState === "error" ? "#ff6b5b" : syncState === "syncing" || pend > 0 ? "#d4b26e" : "#4ade80";
@@ -122,7 +126,7 @@ export default function Setup() {
   const total = AREAS.reduce((t, a) => t + minutes[a.id], 0);
   const run = streak(history);
 
-  const change = (id: (typeof AREAS)[number]["id"], delta: number) => {
+  const change = (id: AreaId, delta: number) => {
     const st = useStore.getState();
     const cur = st.minutes[id];
     const next = Math.max(0, Math.min(MAX_AREA_MINUTES, cur + delta));
@@ -211,6 +215,15 @@ export default function Setup() {
                   <p className="mt-0.5 text-xs text-dim">{a.hint}</p>
                 </div>
                 {m > 0 && total > 0 && <span className="num ml-auto self-start text-xs text-dim">{Math.round((m / total) * 100)}% del día</span>}
+                <button
+                  onClick={() => setEditando(a.id)}
+                  aria-label={`Editar ${a.label}`}
+                  className={`${m > 0 && total > 0 ? "" : "ml-auto"} -m-2 flex h-10 w-10 shrink-0 items-center justify-center self-start rounded-full text-dim transition-transform active:scale-90 active:bg-line`}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+                  </svg>
+                </button>
               </div>
               <div className="mt-3 flex items-center gap-2">
                 <HoldButton
@@ -325,6 +338,7 @@ export default function Setup() {
       </a>
 
       {sheet && <SyncSheet onClose={() => setSheet(false)} />}
+      {editando && <AreaSheet id={editando} onClose={() => setEditando(null)} />}
 
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-ink/92">
         <div className="mx-auto max-w-md px-5 pb-[max(env(safe-area-inset-bottom),12px)] pt-3">

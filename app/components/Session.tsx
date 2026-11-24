@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useStore, remainingSeconds } from "@/lib/store";
-import { AREAS, AREA_BY_ID, sumSeconds } from "@/lib/areas";
+import { sumSeconds } from "@/lib/areas";
+import { useAreas } from "@/lib/useAreas";
 import { dayKey, historyOf, plannedBy, secondsInLastDays, streak } from "@/lib/stats";
 import { playBlockStart, playCountdown, playPause, playResume, playSessionEnd } from "@/lib/audio";
 import { vibrate } from "@/lib/haptics";
@@ -32,6 +33,7 @@ export default function Session() {
 
 function Running() {
   const { session, sound, pause, resume, skip, finish, tick } = useStore();
+  const { byId: AREA_BY_ID } = useAreas();
   const [now, setNow] = useState(() => Date.now());
   const [confirmEnd, setConfirmEnd] = useState(false);
   const lastIndex = useRef(session!.index);
@@ -237,6 +239,7 @@ function Running() {
 
 function Done() {
   const { session, sessions, close, sound } = useStore();
+  const { areas: AREAS } = useAreas();
   const played = useRef(false);
 
   useEffect(() => {

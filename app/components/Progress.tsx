@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { useStore } from "@/lib/store";
-import { AREAS, sumSeconds } from "@/lib/areas";
+import { sumSeconds } from "@/lib/areas";
+import { useAreas } from "@/lib/useAreas";
 import { historyOf, lastDays, streak } from "@/lib/stats";
 
 const mins = (s: number) => Math.round(s / 60);
@@ -14,6 +15,7 @@ const dur = (s: number) => {
 
 export default function Progress() {
   const sessions = useStore((s) => s.sessions);
+  const { areas: AREAS } = useAreas();
   const history = useMemo(() => historyOf(sessions), [sessions]);
   const days = lastDays(7);
   const totals = days.map((d) => sumSeconds(history[d.key]));
