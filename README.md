@@ -29,3 +29,7 @@ EarPiano es la app de tus canciones y teoría. Al terminar una sesión, toca **S
 - Funciona sin internet una vez abierta.
 - En el menú del navegador elige *Instalar app* o *Añadir a pantalla de inicio*.
 - Si quieres ver tus sesiones en otro aparato, entra con tu contraseña (botón de sincronizar).
+
+## Licencia
+
+MIT © 2026 Lingan. Ver [LICENSE](LICENSE).
