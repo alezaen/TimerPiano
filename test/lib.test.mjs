@@ -75,7 +75,10 @@ test('servidor: limpiarSesion acepta lo bueno y rechaza lo raro, y todo lo que m
 
 test('servidor: limpiarAjustes', () => {
   const ok = { minutes: { solfeo: 10, hanon: 10, oido: 0, thompson: 120 }, blockMin: 5, ts: Date.now() };
-  assert.deepEqual(val.limpiarAjustes(ok), ok);
+  assert.deepEqual(val.limpiarAjustes(ok), { ...ok, areaNames: {} }); // un aparato viejo sin nombres sigue valiendo
+  const conNombres = { ...ok, areaNames: { hanon: { label: ' Dedos ', color: '#FF0000' }, inventada: { label: 'x' }, solfeo: { color: 'rojo' } } };
+  assert.deepEqual(val.limpiarAjustes(conNombres).areaNames, { hanon: { label: 'Dedos', color: '#ff0000' } }); // lo raro se descarta y nunca bloquea el sync
+  assert.deepEqual(val.limpiarAjustes({ ...ok, areaNames: 'basura' }).areaNames, {});
   for (const mal of [null, 3, {}, { ...ok, blockMin: 4 }, { ...ok, ts: 0 }, { ...ok, ts: Date.now() + 9e8 }, { ...ok, minutes: { solfeo: 121, hanon: 0, oido: 0, thompson: 0 } }, { ...ok, minutes: { solfeo: 1 } }, { ...ok, minutes: null }])
     assert.equal(val.limpiarAjustes(mal), null, JSON.stringify(mal));
 });
