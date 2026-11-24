@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { cargarLib } from './ayuda-ts.mjs';
 
 const plan = await cargarLib('lib/plan.ts'), links = await cargarLib('lib/links.ts'), sync = await cargarLib('lib/sync.ts');
+const i18n = await cargarLib('lib/i18n.ts'), sanear = await cargarLib('lib/sanear.ts');
 const stats = await cargarLib('lib/stats.ts'), val = await cargarLib('lib/server/validar.ts'), inter = await cargarLib('lib/interleave.ts'), areas = await cargarLib('lib/areas.ts');
 const dia = (y, m, d, h = 12, mi = 0) => new Date(y, m - 1, d, h, mi);
 const conReloj = async (fecha, fn) => { const Real = Date; globalThis.Date = class extends Real { constructor(...a) { if (a.length) super(...a); else super(fecha.getTime()); } static now() { return fecha.getTime(); } }; try { return await fn(); } finally { globalThis.Date = Real; } };
@@ -137,4 +138,20 @@ test('áreas personalizables: mezcla con los valores de fábrica, recorta y desc
   assert.deepEqual(areas.limpiarOverrides({ inventada: { label: 'X' }, oido: { label: 'Oído' }, thompson: {} }), { oido: { label: 'Oído' } });
   assert.deepEqual(areas.limpiarOverrides('no'), {});
   assert.deepEqual(areas.limpiarOverrides(null), {});
+});
+
+test('idiomas: t() reemplaza variables, el inglés no deja huecos y un idioma raro cae al español', () => {
+  assert.equal(i18n.t('es', 'empezar', { n: 25 }), 'Empezar · 25 min');
+  assert.equal(i18n.t('en', 'empezar', { n: 25 }), 'Start · 25 min');
+  assert.equal(i18n.t('en', 'editar', { name: 'Hanon' }), 'Edit Hanon');
+  assert.equal(i18n.t('xx', 'racha'), 'Racha');
+  assert.equal(i18n.t('es', 'editar'), 'Editar {name}'); // sin variable no se rompe
+  assert.ok(i18n.esLang('en') && !i18n.esLang('fr') && !i18n.esLang(null));
+  for (const k of ['abrirEarPiano', 'empezar', 'notaMezcla', 'bloque1']) assert.notEqual(i18n.t('en', k, { n: 1 }), i18n.t('es', k, { n: 1 }), k === 'min' ? '' : k);
+});
+
+test('idiomas: lo guardado en el aparato solo acepta es o en', () => {
+  assert.equal(sanear.sanear({ lang: 'en' }).lang, 'en');
+  assert.equal('lang' in sanear.sanear({ lang: 'fr' }), false);
+  assert.equal('lang' in sanear.sanear({ lang: 3 }), false);
 });

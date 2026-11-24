@@ -7,6 +7,7 @@ import { emptySeconds, limpiarConfig, limpiarOverrides, sumSeconds } from "./are
 import { dayKey } from "./stats";
 import { MAX_SESSIONS, mezclar, pendientes, uid } from "./sync";
 import { sanear } from "./sanear";
+import { LANG_POR_DEFECTO, type Lang } from "./i18n";
 
 export const MAX_AREA_MINUTES = 120;
 export const STEP_MINUTES = 5;
@@ -19,6 +20,8 @@ interface State {
   minutes: Minutes;
   blockMin: number;
   sound: boolean;
+  /** Idioma de la interfaz (solo en este aparato). */
+  lang: Lang;
   /** Nombre, descripción y color que la persona le puso a cada área (solo en este aparato). */
   areaNames: AreaOverrides;
   sessions: SessionRecord[];
@@ -38,6 +41,7 @@ interface State {
   setMinutes: (id: AreaId, minutes: number) => void;
   setBlockMin: (n: number) => void;
   toggleSound: () => void;
+  setLang: (l: Lang) => void;
   /** Cambia cómo se ve un área. Un campo vacío o inválido vuelve al valor de fábrica. */
   setAreaConfig: (id: AreaId, patch: Partial<AreaConfig>) => void;
   resetArea: (id: AreaId) => void;
@@ -101,6 +105,7 @@ export const useStore = create<State>()(
       minutes: { solfeo: 10, hanon: 10, oido: 10, thompson: 10 },
       blockMin: 5,
       sound: true,
+      lang: LANG_POR_DEFECTO,
       areaNames: {},
       sessions: [],
       session: null,
@@ -118,6 +123,7 @@ export const useStore = create<State>()(
         })),
       setBlockMin: (n) => set({ blockMin: n, ajustesTs: Date.now() }),
       toggleSound: () => set((s) => ({ sound: !s.sound })),
+      setLang: (lang) => set({ lang }),
 
       setAreaConfig: (id, patch) =>
         set((s) => {
@@ -345,6 +351,7 @@ export const useStore = create<State>()(
         minutes: s.minutes,
         blockMin: s.blockMin,
         sound: s.sound,
+        lang: s.lang,
         areaNames: s.areaNames,
         sessions: s.sessions,
         session: s.session,

@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore, BLOCK_OPTIONS, MAX_AREA_MINUTES, STEP_MINUTES } from "@/lib/store";
 import { useAreas } from "@/lib/useAreas";
+import { useT } from "@/lib/useT";
+import { LANGS } from "@/lib/i18n";
 import type { AreaId } from "@/lib/types";
 import { buildBlocks } from "@/lib/interleave";
 import { requestAudioPermission, playStart, playStep, playTap, playShuffle } from "@/lib/audio";
@@ -80,6 +82,7 @@ function HoldButton({
 
 /** Número que se puede tocar y escribir directo (ej. 25). */
 function MinutesField({ value, label, onCommit }: { value: number; label: string; onCommit: (n: number) => void }) {
+  const t = useT();
   const [draft, setDraft] = useState<string | null>(null);
   const commit = () => {
     if (draft === null) return;
@@ -92,7 +95,7 @@ function MinutesField({ value, label, onCommit }: { value: number; label: string
       <input
         inputMode="numeric"
         pattern="[0-9]*"
-        aria-label={`Minutos de ${label}`}
+        aria-label={t("minutosDe", { name: label })}
         value={draft ?? String(value)}
         onFocus={(e) => {
           const el = e.currentTarget;
@@ -106,17 +109,21 @@ function MinutesField({ value, label, onCommit }: { value: number; label: string
         }}
         className="num h-12 w-full pozo rounded-xl border border-transparent pr-9 text-center text-xl font-semibold outline-none focus:border-gold"
       />
-      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-dim">min</span>
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-dim">{t("min")}</span>
     </div>
   );
 }
 
 export default function Setup() {
-  const { minutes, blockMin, sound, sessions, auth, syncState, setMinutes, setBlockMin, toggleSound, start } = useStore();
+  const { minutes, blockMin, sound, lang, sessions, auth, syncState, setMinutes, setBlockMin, toggleSound, setLang, start } = useStore();
+  const t = useT();
   const [seed, setSeed] = useState(0);
   const [sheet, setSheet] = useState(false);
   const [editando, setEditando] = useState<AreaId | null>(null);
   const { areas: AREAS, byId: AREA_BY_ID } = useAreas();
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
   const history = useMemo(() => historyOf(sessions), [sessions]);
   const pend = pendientes(sessions).length;
   const dot = !auth ? null : syncState === "error" ? "#ff6b5b" : syncState === "syncing" || pend > 0 ? "#d4b26e" : "#4ade80";
@@ -151,7 +158,7 @@ export default function Setup() {
         <div className="flex items-center gap-1">
           <a
             href={REPERTORIO_URL}
-            aria-label="Abrir EarPiano"
+            aria-label={t("abrirEarPiano")}
             className="flex h-10 w-10 items-center justify-center rounded-full text-dim transition-transform active:scale-90 active:bg-line"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -162,7 +169,7 @@ export default function Setup() {
           </a>
           <button
             onClick={() => setSheet(true)}
-            aria-label={auth ? "Sincronización" : "Conectar para sincronizar"}
+            aria-label={auth ? t("sincronizacion") : t("conectarSync")}
             className="relative flex h-10 w-10 items-center justify-center rounded-full text-dim transition-transform active:scale-90 active:bg-line"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -171,9 +178,16 @@ export default function Setup() {
             {dot && <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full ring-2 ring-ink" style={{ background: dot }} />}
           </button>
           <button
+            onClick={() => setLang(LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length])}
+            aria-label={t("cambiarIdioma")}
+            className="flex h-10 min-w-10 items-center justify-center rounded-full px-2 text-xs font-semibold uppercase tracking-wider text-dim transition-transform active:scale-90 active:bg-line"
+          >
+            {lang}
+          </button>
+          <button
             onClick={toggleSound}
             aria-pressed={sound}
-            aria-label={sound ? "Sonido activado" : "Sonido desactivado"}
+            aria-label={sound ? t("sonidoOn") : t("sonidoOff")}
             className="flex h-10 w-10 items-center justify-center rounded-full text-dim transition-transform active:scale-90 active:bg-line"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -186,20 +200,20 @@ export default function Setup() {
 
       <section className="mt-8 flex items-end justify-between">
         <div>
-          <p className="text-sm text-dim">Hoy practicas</p>
+          <p className="text-sm text-dim">{t("hoyPracticas")}</p>
           <p className="num text-7xl font-semibold leading-none tracking-tight">
             {total}
-            <span className="ml-2 text-2xl font-medium text-dim">min</span>
+            <span className="ml-2 text-2xl font-medium text-dim">{t("min")}</span>
           </p>
         </div>
         {run > 0 && (
           <span className="num mb-1 rounded-full border border-line bg-card px-3 py-1 text-xs text-dim">
-            <span aria-hidden>🔥</span> Racha <span className="font-semibold text-fg">{run}</span>
+            <span aria-hidden>🔥</span> {t("racha")} <span className="font-semibold text-fg">{run}</span>
           </span>
         )}
       </section>
 
-      <section className="mt-6 space-y-2.5" aria-label="Minutos por área">
+      <section className="mt-6 space-y-2.5" aria-label={t("minutosPorArea")}>
         {AREAS.map((a) => {
           const m = minutes[a.id];
           return (
@@ -214,10 +228,10 @@ export default function Setup() {
                   <p className="font-medium leading-tight">{a.label}</p>
                   <p className="mt-0.5 text-xs text-dim">{a.hint}</p>
                 </div>
-                {m > 0 && total > 0 && <span className="num ml-auto self-start text-xs text-dim">{Math.round((m / total) * 100)}% del día</span>}
+                {m > 0 && total > 0 && <span className="num ml-auto self-start text-xs text-dim">{t("pctDelDia", { n: Math.round((m / total) * 100) })}</span>}
                 <button
                   onClick={() => setEditando(a.id)}
-                  aria-label={`Editar ${a.label}`}
+                  aria-label={t("editar", { name: a.label })}
                   className={`${m > 0 && total > 0 ? "" : "ml-auto"} -m-2 flex h-10 w-10 shrink-0 items-center justify-center self-start rounded-full text-dim transition-transform active:scale-90 active:bg-line`}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -229,7 +243,7 @@ export default function Setup() {
                 <HoldButton
                   onStep={() => change(a.id, -STEP_MINUTES)}
                   atLimit={m <= 0}
-                  label={`Menos minutos de ${a.label}`}
+                  label={t("menosMinutos", { name: a.label })}
                   className="tecla flex h-12 w-14 shrink-0 items-center justify-center rounded-xl bg-line/60 text-2xl font-medium text-fg"
                 >
                   −
@@ -245,7 +259,7 @@ export default function Setup() {
                 <HoldButton
                   onStep={() => change(a.id, STEP_MINUTES)}
                   atLimit={m >= MAX_AREA_MINUTES}
-                  label={`Más minutos de ${a.label}`}
+                  label={t("masMinutos", { name: a.label })}
                   className="tecla flex h-12 w-14 shrink-0 items-center justify-center rounded-xl bg-line/60 text-2xl font-medium text-fg"
                 >
                   +
@@ -257,7 +271,7 @@ export default function Setup() {
       </section>
 
       <section className="mt-6">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-dim">Cambio de área cada</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-dim">{t("cambioDeArea")}</p>
         <div className="grid grid-cols-3 gap-2 rounded-2xl border border-line bg-card p-1.5" role="radiogroup">
           {BLOCK_OPTIONS.map((n) => (
             <button
@@ -273,7 +287,7 @@ export default function Setup() {
                 blockMin === n ? "glow-gold bg-gold text-ink" : "text-dim"
               }`}
             >
-              {n} min
+              {n} {t("min")}
             </button>
           ))}
         </div>
@@ -281,7 +295,7 @@ export default function Setup() {
 
       <section className="mt-6 rounded-2xl border border-line bg-card p-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">Tu orden de hoy</p>
+          <p className="text-sm font-medium">{t("tuOrden")}</p>
           <button
             onClick={() => {
               vibrate([10, 30, 10, 30, 10]);
@@ -291,7 +305,7 @@ export default function Setup() {
             disabled={blocks.length < 2}
             className="-my-2 rounded-lg px-3 py-3 text-xs font-semibold text-gold disabled:opacity-30"
           >
-            Mezclar de nuevo
+            {t("mezclar")}
           </button>
         </div>
         {blocks.length > 0 ? (
@@ -310,15 +324,14 @@ export default function Setup() {
               ))}
             </div>
             <p className="mt-3 text-xs text-dim">
-              {blocks.length} {blocks.length === 1 ? "bloque" : "bloques"}, sin repetir área seguida.
+              {t(blocks.length === 1 ? "bloque1" : "bloques", { n: blocks.length })}
             </p>
           </>
         ) : (
-          <p className="mt-3 text-xs text-dim">Suma minutos a al menos un área.</p>
+          <p className="mt-3 text-xs text-dim">{t("sumaMinutos")}</p>
         )}
         <p className="mt-3 border-t border-line pt-3 text-xs leading-relaxed text-dim">
-          Mezclar se siente más difícil que repetir lo mismo. Es normal: esa dificultad es la que ayuda a recordarlo
-          después.
+          {t("notaMezcla")}
         </p>
       </section>
 
@@ -330,7 +343,7 @@ export default function Setup() {
       >
         <div>
           <p className="font-medium">EarPiano</p>
-          <p className="mt-0.5 text-xs text-dim">Tu repertorio, acordes y teoría</p>
+          <p className="mt-0.5 text-xs text-dim">{t("earPianoSub")}</p>
         </div>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-dim" aria-hidden>
           <path d="M5 12h14M13 6l6 6-6 6" />
@@ -347,7 +360,7 @@ export default function Setup() {
             disabled={blocks.length === 0}
             className="h-14 w-full rounded-2xl glow-gold bg-gold text-base font-semibold text-ink transition-transform active:scale-[0.98] disabled:opacity-40"
           >
-            Empezar · {total} min
+            {t("empezar", { n: total })}
           </button>
         </div>
       </div>
