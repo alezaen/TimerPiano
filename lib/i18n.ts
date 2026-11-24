@@ -218,6 +218,16 @@ export const DIAS_SEMANA: Record<Lang, string[]> = {
   en: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
 };
 
+/** Nombre y descripción de fábrica de las 4 áreas en cada idioma. El español vive en `AREAS` (lib/areas.ts); aquí solo lo que cambia. */
+export const AREAS_FABRICA: Partial<Record<Lang, Record<string, { label: string; hint: string }>>> = {
+  en: {
+    solfeo: { label: "Sight-reading", hint: "Reading and rhythm" },
+    hanon: { label: "Hanon", hint: "Finger technique" },
+    oido: { label: "Play by ear", hint: "Figuring songs out by ear" },
+    thompson: { label: "John Thompson", hint: "Repertoire" },
+  },
+};
+
 export const esLang = (x: unknown): x is Lang => x === "es" || x === "en";
 
 /** El texto en el idioma pedido. `{name}`, `{n}`… se reemplazan con `vars`. Un idioma raro cae al español. */

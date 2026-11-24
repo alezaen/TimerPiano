@@ -167,3 +167,17 @@ test('idiomas: el inglés tiene exactamente las mismas claves y días de la sema
   assert.equal(dias.length, 7); assert.ok(dias.every((d) => i18n.DIAS_SEMANA.en.includes(d.label)));
   assert.ok(stats.lastDays(7).every((d) => i18n.DIAS_SEMANA.es.includes(d.label))); // sin segundo argumento sigue en español
 });
+
+test('áreas: los nombres de fábrica siguen el idioma y lo personalizado manda sobre el idioma', () => {
+  assert.deepEqual(areas.mergeAreas({}, 'es'), areas.AREAS);
+  const en = areas.mergeAreas({}, 'en');
+  assert.equal(en.find((a) => a.id === 'solfeo').label, 'Sight-reading');
+  assert.equal(en.find((a) => a.id === 'oido').label, 'Play by ear');
+  assert.deepEqual(en.map((a) => a.id), areas.AREAS.map((a) => a.id)); // mismos ids y colores
+  assert.deepEqual(en.map((a) => a.color), areas.AREAS.map((a) => a.color));
+  const mio = areas.mergeAreas({ hanon: { label: 'Escalas' } }, 'en');
+  assert.equal(mio.find((a) => a.id === 'hanon').label, 'Escalas'); // lo que él escribió no se traduce
+  assert.equal(mio.find((a) => a.id === 'hanon').hint, 'Finger technique');
+  assert.deepEqual(areas.areasDeFabrica('fr'), areas.AREAS); // idioma sin traducción: español
+  for (const a of en) assert.ok(a.label.length <= areas.MAX_NOMBRE && a.hint.length <= areas.MAX_HINT, a.id);
+});

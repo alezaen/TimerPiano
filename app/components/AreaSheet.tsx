@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { useAreas } from "@/lib/useAreas";
 import { useT } from "@/lib/useT";
-import { AREA_BY_ID, MAX_HINT, MAX_NOMBRE } from "@/lib/areas";
+import { areasDeFabrica, MAX_HINT, MAX_NOMBRE } from "@/lib/areas";
 import type { AreaId } from "@/lib/types";
 
 /** Colores sugeridos (se puede escribir otro con el selector). */
@@ -16,6 +16,7 @@ export default function AreaSheet({ id, onClose }: { id: AreaId; onClose: () => 
   const t = useT();
   const setAreaConfig = useStore((s) => s.setAreaConfig);
   const resetArea = useStore((s) => s.resetArea);
+  const lang = useStore((s) => s.lang);
   const a = byId[id];
   // Se escribe en un borrador y se guarda al terminar: así se pueden escribir espacios sin que se borren al instante.
   const [label, setLabel] = useState(a.label);
@@ -32,8 +33,9 @@ export default function AreaSheet({ id, onClose }: { id: AreaId; onClose: () => 
   };
   const restaurar = () => {
     resetArea(id);
-    setLabel(AREA_BY_ID[id].label);
-    setHint(AREA_BY_ID[id].hint);
+    const fabrica = areasDeFabrica(lang).find((x) => x.id === id);
+    setLabel(fabrica?.label ?? "");
+    setHint(fabrica?.hint ?? "");
   };
 
   return (

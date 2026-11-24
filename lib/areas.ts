@@ -1,4 +1,5 @@
 import type { Area, AreaConfig, AreaId, AreaOverrides, Seconds } from "./types";
+import { AREAS_FABRICA, LANG_POR_DEFECTO, type Lang } from "./i18n";
 
 /** Valores de fábrica de las 4 áreas. Para mostrarlas usa `mergeAreas` (o `useAreas` en los componentes). */
 export const AREAS: Area[] = [
@@ -45,9 +46,15 @@ export function limpiarOverrides(x: unknown): AreaOverrides {
   return out;
 }
 
-/** Las 4 áreas con lo que la persona cambió encima de los valores de fábrica. */
-export function mergeAreas(over?: AreaOverrides): Area[] {
-  return AREAS.map((a) => ({ ...a, ...limpiarConfig(over?.[a.id]) }));
+/** Los valores de fábrica de las áreas en el idioma pedido (nombre y descripción; el color no cambia). */
+export function areasDeFabrica(lang: Lang = LANG_POR_DEFECTO): Area[] {
+  const textos = AREAS_FABRICA[lang];
+  return AREAS.map((a) => ({ ...a, ...(textos?.[a.id] ?? {}) }));
+}
+
+/** Las 4 áreas con lo que la persona cambió encima de los valores de fábrica (en su idioma). */
+export function mergeAreas(over?: AreaOverrides, lang: Lang = LANG_POR_DEFECTO): Area[] {
+  return areasDeFabrica(lang).map((a) => ({ ...a, ...limpiarConfig(over?.[a.id]) }));
 }
 
 export const emptySeconds = (): Seconds => ({ solfeo: 0, hanon: 0, oido: 0, thompson: 0 });
