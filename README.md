@@ -2,6 +2,10 @@
 
 Un temporizador para practicar piano. Mezcla varias cosas en bloques cortos, en vez de hacer una sola durante mucho rato. Así se recuerda más.
 
+## Capturas
+
+<table><tr><td align="center"><img src="docs/TimerPiano-inicio.png" width="220" alt="Elige tus minutos"><br><sub>Elige tus minutos</sub></td><td align="center"><img src="docs/TimerPiano-en-curso.png" width="220" alt="Sesión en curso"><br><sub>Sesión en curso</sub></td><td align="center"><img src="docs/TimerPiano-inicio-con-historial.png" width="220" alt="Tu progreso"><br><sub>Tu progreso</sub></td></tr></table>
+
 ## Para qué sirve
 
 Eliges cuántos minutos le das a cada cosa:
