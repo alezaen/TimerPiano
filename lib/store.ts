@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import type { AreaConfig, AreaId, AreaOverrides, Block, Minutes, Seconds, Session, SessionRecord } from "./types";
 import { emptySeconds, limpiarConfig, limpiarOverrides, sumSeconds } from "./areas";
 import { dayKey } from "./stats";
-import { MAX_SESSIONS, mezclar, pendientes, uid } from "./sync";
+import { MAX_SESSIONS, mezclar, pendientes, postJson, uid } from "./sync";
 import { sanear } from "./sanear";
 import { LANG_POR_DEFECTO, t, type Lang } from "./i18n";
 
@@ -269,16 +269,13 @@ export const useStore = create<State>()(
         set({ syncState: "syncing", syncError: null });
         try {
           const subir = pendientes(st.sessions).slice(0, 100).map(({ id, f, d }) => ({ id, f, d }));
-          const res = await fetch("/api/sync", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              token: auth.token,
-              sesiones: subir,
-              ajustes: { minutes: st.minutes, blockMin: st.blockMin, ts: st.ajustesTs, areaNames: st.areaNames },
-            }),
+          const res = await postJson("/api/sync", {
+            token: auth.token,
+            sesiones: subir,
+            // La fecha de los ajustes nunca va en el futuro: el servidor rechaza todo el envío si el reloj del aparato está muy adelantado.
+            ajustes: { minutes: st.minutes, blockMin: st.blockMin, ts: Math.min(st.ajustesTs, Date.now()), areaNames: st.areaNames },
           });
-          const data = await res.json().catch(() => ({}));
+          const data = res.data;
           if (res.status === 401) {
             set({ auth: null, syncState: "idle", syncError: t(get().lang, "sesionVencio") });
             return;

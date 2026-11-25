@@ -181,3 +181,20 @@ test('áreas: los nombres de fábrica siguen el idioma y lo personalizado manda 
   assert.deepEqual(areas.areasDeFabrica('fr'), areas.AREAS); // idioma sin traducción: español
   for (const a of en) assert.ok(a.label.length <= areas.MAX_NOMBRE && a.hint.length <= areas.MAX_HINT, a.id);
 });
+
+test('sync: postJson corta una conexión colgada, entiende la respuesta y no se cae con un cuerpo que no es JSON', async () => {
+  // una petición que nunca contesta (señal mala): al pasar el tiempo se cancela y lanza error
+  const colgada = (_url, init) => new Promise((_, rechazar) => init.signal.addEventListener('abort', () => rechazar(new Error('cancelada'))));
+  const t0 = Date.now();
+  await assert.rejects(() => sync.postJson('/api/sync', { a: 1 }, 40, colgada), /cancelada/);
+  assert.ok(Date.now() - t0 < 1000, 'no espera más de la cuenta');
+  // respuesta normal
+  let visto;
+  const buena = async (url, init) => { visto = { url, init }; return { ok: true, status: 200, json: async () => ({ sesiones: [] }) }; };
+  const r = await sync.postJson('/api/sync', { token: 't' }, 1000, buena);
+  assert.deepEqual(r, { ok: true, status: 200, data: { sesiones: [] } });
+  assert.equal(visto.init.method, 'POST'); assert.equal(visto.init.headers['Content-Type'], 'application/json'); assert.deepEqual(JSON.parse(visto.init.body), { token: 't' });
+  // error del servidor con cuerpo que no es JSON: no lanza, devuelve datos vacíos y el estado
+  const rota = async () => ({ ok: false, status: 502, json: async () => { throw new Error('no es json'); } });
+  assert.deepEqual(await sync.postJson('/api/sync', {}, 1000, rota), { ok: false, status: 502, data: {} });
+});

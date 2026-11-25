@@ -20,3 +20,30 @@ export function mezclar(local: SessionRecord[], servidor: SessionRecord[]): Sess
 }
 
 export const pendientes = (sessions: SessionRecord[]) => sessions.filter((s) => s.p);
+
+/**
+ * POST con JSON y tiempo máximo. Sin esto, una conexión que se queda colgada (señal mala en el teléfono) dejaba la
+ * sincronización en "sincronizando" para siempre y no volvía a intentar hasta recargar la app.
+ * Si se pasa el tiempo, se cancela y lanza un error (la app lo muestra como "sin conexión" y reintenta después).
+ */
+export async function postJson(
+  url: string,
+  body: unknown,
+  ms = 20000,
+  f: typeof fetch = fetch,
+): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  try {
+    const res = await f(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: ctl.signal,
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+  } finally {
+    clearTimeout(timer);
+  }
+}
