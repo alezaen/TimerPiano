@@ -21,10 +21,10 @@ const dur = (s: number) => {
 
 /** Título y frase del resumen según lo que se logró frente a lo planeado. */
 function mensaje(pct: number, total: number, run: number): { title: Clave; text: Clave; n?: number } {
-  if (total === 0) return { title: "sesionTerminada", text: "noAlcanzaste" };
+  if (total === 0) return { title: "sinMinutos", text: "noAlcanzaste" };
   if (pct >= 100) return { title: "sesionCompleta", text: run >= 3 ? "cumplisteRacha" : "cumpliste", n: run };
   if (pct >= 70) return { title: "granSesion", text: "casiTodo" };
-  return { title: "sesionGuardada", text: "cadaMinuto" };
+  return { title: "buenAvance", text: "cadaMinuto" };
 }
 
 export default function Session() {
@@ -230,7 +230,7 @@ function Running() {
               </button>
             </div>
           ) : (
-            <button onClick={() => setConfirmEnd(true)} className="rounded-lg px-4 py-2 text-sm text-dim">
+            <button onClick={() => setConfirmEnd(true)} className="min-h-11 rounded-lg px-4 py-2 text-sm text-dim">
               {t("terminarSesion")}
             </button>
           )}
